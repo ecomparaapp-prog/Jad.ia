@@ -11,6 +11,9 @@ import {
   Zap,
   Copy,
   Check,
+  FolderOpen,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
 interface Attachment {
@@ -36,6 +39,11 @@ interface StackDecision {
   systemPrompt: string;
 }
 
+interface VibeFile {
+  name: string;
+  status: "writing" | "done" | "queued";
+}
+
 interface VibeChatPanelProps {
   projectName: string;
   currentFileName?: string;
@@ -48,6 +56,8 @@ interface VibeChatPanelProps {
   onLiveCodeUpdate: (code: string, lang: string) => void;
   onClose: () => void;
   onReanalyze: () => void;
+  vibeMode?: boolean;
+  onFileWrite?: (filename: string, content: string) => void;
 }
 
 const QUICK_COMMANDS = [
@@ -57,6 +67,7 @@ const QUICK_COMMANDS = [
   { cmd: "/explain", desc: "Explica o que o código faz" },
   { cmd: "/test", desc: "Escreve testes para o código" },
   { cmd: "/refactor", desc: "Refatora e melhora o código" },
+  { cmd: "/vibe", desc: "Cria um projeto completo com múltiplos arquivos" },
 ];
 
 const STATUS_MESSAGES = [
@@ -66,6 +77,28 @@ const STATUS_MESSAGES = [
   "Aplicando estrutura...",
   "Finalizando...",
 ];
+
+const VIBE_SYSTEM_PROMPT = `
+MODO VIBE CODING ATIVO — CRIAÇÃO AUTOMÁTICA DE ARQUIVOS:
+Quando solicitado a criar um sistema, app ou projeto completo, siga SEMPRE este processo:
+
+1. Primeiro, descreva brevemente (1-2 frases) o que vai construir.
+2. Liste os arquivos: "📁 Arquivos: index.html, style.css, app.js"
+3. Para CADA arquivo, use EXATAMENTE este formato (sem variações):
+
+===FILE: nome_do_arquivo.extensao===
+[conteúdo completo e funcional do arquivo aqui]
+===END_FILE===
+
+REGRAS OBRIGATÓRIAS:
+- Use apenas HTML, CSS e JavaScript puro (sem npm, sem frameworks externos)
+- Sempre crie um index.html como arquivo principal de entrada
+- Cada arquivo deve ser completo, funcional e bem estruturado
+- Use design moderno com cores escuras e acentos em teal/verde
+- Para CSS, use variáveis CSS e design responsivo
+- Para JS, use código limpo e comentado
+- Não use placeholders — escreva o código real e funcional
+`;
 
 function extractAllCodeBlocks(text: string): Array<{ code: string; lang: string }> {
   const regex = /```(\w*)\n([\s\S]*?)```/g;
@@ -95,6 +128,14 @@ function formatMessage(content: string): { parts: Array<{ type: "text" | "code";
   return { parts };
 }
 
+function stripVibeMarkers(content: string): string {
+  return content
+    .replace(/===FILE: [^\n]+===\n?/g, "")
+    .replace(/===END_FILE===/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function CodeBlock({ content, lang }: { content: string; lang: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -115,6 +156,48 @@ function CodeBlock({ content, lang }: { content: string; lang: string }) {
   );
 }
 
+function VibeFilesProgress({ files }: { files: VibeFile[] }) {
+  if (files.length === 0) return null;
+  return (
+    <div className="mx-3 mb-2 rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(0,137,123,0.06)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
+        <FolderOpen className="h-3.5 w-3.5 text-teal-400" />
+        <span className="text-[11px] font-mono text-teal-400 font-medium">Motor de Escrita de Arquivos</span>
+      </div>
+      <div className="p-2 space-y-1">
+        {files.map((f) => (
+          <div key={f.name} className="flex items-center gap-2 px-2 py-1 rounded-lg">
+            {f.status === "done" ? (
+              <CheckCircle2 className="h-3 w-3 text-green-400 flex-shrink-0" />
+            ) : f.status === "writing" ? (
+              <Loader2 className="h-3 w-3 text-teal-400 animate-spin flex-shrink-0" />
+            ) : (
+              <div className="h-3 w-3 rounded-full border border-white/20 flex-shrink-0" />
+            )}
+            <span
+              className={`text-[10px] font-mono flex-1 truncate ${
+                f.status === "done"
+                  ? "text-green-400"
+                  : f.status === "writing"
+                    ? "text-teal-300"
+                    : "text-muted-foreground/60"
+              }`}
+            >
+              {f.name}
+            </span>
+            {f.status === "done" && (
+              <span className="text-[9px] font-mono text-green-500/70">salvo</span>
+            )}
+            {f.status === "writing" && (
+              <span className="text-[9px] font-mono text-teal-400/70 animate-pulse">escrevendo...</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function VibeChatPanel({
   projectName,
   currentFileName,
@@ -127,6 +210,8 @@ export default function VibeChatPanel({
   onLiveCodeUpdate,
   onClose,
   onReanalyze,
+  vibeMode = false,
+  onFileWrite,
 }: VibeChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -136,11 +221,13 @@ export default function VibeChatPanel({
   const [showCommands, setShowCommands] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
+  const [vibeFiles, setVibeFiles] = useState<VibeFile[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
+  const processedFilesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (isStreaming) return;
@@ -158,7 +245,7 @@ export default function VibeChatPanel({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isStreaming]);
+  }, [messages, isStreaming, vibeFiles]);
 
   useEffect(() => {
     if (isStreaming) {
@@ -280,6 +367,73 @@ export default function VibeChatPanel({
     ];
   };
 
+  function processVibeStream(text: string) {
+    if (!vibeMode || !onFileWrite) return;
+
+    const completedRegex = /===FILE: ([^\n=]+)===\n([\s\S]*?)===END_FILE===/g;
+    let match;
+    const newlyCompleted: string[] = [];
+
+    while ((match = completedRegex.exec(text)) !== null) {
+      const filename = match[1].trim();
+      const content = match[2];
+
+      if (!processedFilesRef.current.has(filename)) {
+        processedFilesRef.current.add(filename);
+        newlyCompleted.push(filename);
+        onFileWrite(filename, content);
+      }
+    }
+
+    if (newlyCompleted.length > 0) {
+      setVibeFiles((prev) => {
+        const updated = [...prev];
+        for (const name of newlyCompleted) {
+          const idx = updated.findIndex((f) => f.name === name);
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], status: "done" };
+          } else {
+            updated.push({ name, status: "done" });
+          }
+        }
+        return updated;
+      });
+    }
+
+    const fileStartRegex = /===FILE: ([^\n=]+)===/g;
+    let lastFileMatch: RegExpExecArray | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = fileStartRegex.exec(text)) !== null) {
+      lastFileMatch = m;
+    }
+
+    if (lastFileMatch) {
+      const filename = lastFileMatch[1].trim();
+      if (!processedFilesRef.current.has(filename)) {
+        const markerFull = `===FILE: ${filename}===`;
+        const markerPos = text.lastIndexOf(markerFull);
+        if (markerPos >= 0) {
+          const contentStart = markerPos + markerFull.length;
+          const afterContent = text.slice(contentStart);
+          const endMarkerPos = afterContent.indexOf("===END_FILE===");
+          const currentContent = endMarkerPos >= 0 ? afterContent.slice(0, endMarkerPos) : afterContent;
+
+          const ext = filename.split(".").pop() || "";
+          onLiveCodeUpdate(currentContent.replace(/^\n/, ""), ext);
+
+          setVibeFiles((prev) => {
+            if (!prev.find((f) => f.name === filename)) {
+              return [...prev, { name: filename, status: "writing" }];
+            }
+            return prev.map((f) => (f.name === filename ? { ...f, status: "writing" } : f));
+          });
+
+          setStatusText(`Escrevendo ${filename}...`);
+        }
+      }
+    }
+  }
+
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed && attachments.length === 0) return;
@@ -298,6 +452,9 @@ export default function VibeChatPanel({
     setAttachments([]);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
+    setVibeFiles([]);
+    processedFilesRef.current = new Set();
+
     const assistantPlaceholder: ChatMessage = {
       role: "assistant",
       content: "",
@@ -314,9 +471,8 @@ export default function VibeChatPanel({
       .filter((m) => !m.isDecision)
       .map((m) => ({
         role: m.role,
-        content: m.role === "user" && m.attachments?.some((a) => a.type === "image")
-          ? userContent
-          : m.content,
+        content:
+          m.role === "user" && m.attachments?.some((a) => a.type === "image") ? userContent : m.content,
       }));
 
     const effectiveLanguage =
@@ -325,6 +481,10 @@ export default function VibeChatPanel({
           ? `${stackDecision.framework} (${stackDecision.language})`
           : "auto"
         : language;
+
+    const extraSystemPrompt = vibeMode
+      ? (stackDecision?.systemPrompt ? `${stackDecision.systemPrompt}\n\n${VIBE_SYSTEM_PROMPT}` : VIBE_SYSTEM_PROMPT)
+      : stackDecision?.systemPrompt ?? null;
 
     try {
       const response = await fetch("/api/ai/stream", {
@@ -337,7 +497,7 @@ export default function VibeChatPanel({
           messages: conversationHistory,
           projectContext: `Projeto: ${projectName}${currentFileName ? `, Arquivo: ${currentFileName}` : ""}`,
           language: effectiveLanguage,
-          systemPrompt: stackDecision?.systemPrompt ?? null,
+          systemPrompt: extraSystemPrompt,
         }),
         signal: ctrl.signal,
       });
@@ -353,20 +513,33 @@ export default function VibeChatPanel({
       let lastCodeBlockCount = 0;
 
       const flush = () => {
-        const blocks = extractAllCodeBlocks(accumulated);
-        if (blocks.length > lastCodeBlockCount && blocks.length > 0) {
-          lastCodeBlockCount = blocks.length;
-          const last = blocks[blocks.length - 1];
-          onLiveCodeUpdate(last.code, last.lang);
-        }
-        setMessages((prev) => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.isStreaming) {
-            copy[copy.length - 1] = { ...last, content: accumulated };
+        if (vibeMode) {
+          processVibeStream(accumulated);
+          const displayContent = stripVibeMarkers(accumulated);
+          setMessages((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.isStreaming) {
+              copy[copy.length - 1] = { ...last, content: displayContent };
+            }
+            return copy;
+          });
+        } else {
+          const blocks = extractAllCodeBlocks(accumulated);
+          if (blocks.length > lastCodeBlockCount && blocks.length > 0) {
+            lastCodeBlockCount = blocks.length;
+            const last = blocks[blocks.length - 1];
+            onLiveCodeUpdate(last.code, last.lang);
           }
-          return copy;
-        });
+          setMessages((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.isStreaming) {
+              copy[copy.length - 1] = { ...last, content: accumulated };
+            }
+            return copy;
+          });
+        }
       };
 
       while (true) {
@@ -390,25 +563,37 @@ export default function VibeChatPanel({
               flush();
             }
           } catch {
-            if (payload === "done" || payload === '{}') break;
+            if (payload === "done" || payload === "{}") break;
           }
         }
       }
 
-      const finalBlocks = extractAllCodeBlocks(accumulated);
-      if (finalBlocks.length > 0) {
-        const last = finalBlocks[finalBlocks.length - 1];
-        onLiveCodeUpdate(last.code, last.lang);
-      }
-
-      setMessages((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last?.isStreaming) {
-          copy[copy.length - 1] = { ...last, content: accumulated, isStreaming: false };
+      if (vibeMode) {
+        processVibeStream(accumulated);
+        const displayContent = stripVibeMarkers(accumulated);
+        setMessages((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.isStreaming) {
+            copy[copy.length - 1] = { ...last, content: displayContent, isStreaming: false };
+          }
+          return copy;
+        });
+      } else {
+        const finalBlocks = extractAllCodeBlocks(accumulated);
+        if (finalBlocks.length > 0) {
+          const last = finalBlocks[finalBlocks.length - 1];
+          onLiveCodeUpdate(last.code, last.lang);
         }
-        return copy;
-      });
+        setMessages((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.isStreaming) {
+            copy[copy.length - 1] = { ...last, content: accumulated, isStreaming: false };
+          }
+          return copy;
+        });
+      }
     } catch (err: unknown) {
       if ((err as Error).name === "AbortError") return;
       setMessages((prev) => {
@@ -456,7 +641,10 @@ export default function VibeChatPanel({
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
       }}
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
@@ -481,6 +669,11 @@ export default function VibeChatPanel({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-foreground leading-none">Vibe Coding</span>
+                {vibeMode && (
+                  <span className="text-[10px] font-mono bg-teal-500/15 text-teal-400 border border-teal-500/25 px-1.5 py-0.5 rounded-full">
+                    multi-arquivo
+                  </span>
+                )}
                 <span className="flex items-center gap-1 text-[10px] font-mono bg-green-500/15 text-green-400 border border-green-500/25 px-1.5 py-0.5 rounded-full">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
                   ao vivo
@@ -489,7 +682,9 @@ export default function VibeChatPanel({
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">
                 {isAutoMode && stackDecision
                   ? `Stack: ${stackDecision.framework} · ${stackDecision.language}`
-                  : "Descreva, a IA constrói em tempo real"}
+                  : vibeMode
+                    ? "IA escreve arquivos automaticamente"
+                    : "Descreva, a IA constrói em tempo real"}
               </p>
             </div>
           </div>
@@ -516,18 +711,27 @@ export default function VibeChatPanel({
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth">
         {messages.length === 0 && !isAnalyzing && (
           <div className="flex flex-col items-center justify-center h-full gap-5 px-2 py-8 text-center">
-            <div className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left"
+            <div
+              className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left"
               style={{ boxShadow: "inset 0 0 20px hsl(var(--primary) / 0.06)" }}
             >
               <p className="text-[11px] font-mono text-primary/80 mb-2 flex items-center gap-1.5">
                 <Zap className="h-3 w-3" />
-                Como usar
+                {vibeMode ? "Motor de Vibe Coding ativo" : "Como usar"}
               </p>
-              <p className="text-xs text-foreground/70 leading-relaxed">
-                Digite sua ideia na <span className="text-foreground font-medium">caixa abaixo</span> e pressione{" "}
-                <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-white/10 border border-white/20 font-mono">Enter</kbd>.
-                O código vai aparecendo no editor enquanto a IA escreve.
-              </p>
+              {vibeMode ? (
+                <p className="text-xs text-foreground/70 leading-relaxed">
+                  Descreva o <span className="text-foreground font-medium">sistema completo</span> que quer criar.
+                  A IA vai gerar todos os arquivos automaticamente e eles serão{" "}
+                  <span className="text-teal-400 font-medium">salvos no projeto</span> enquanto você assiste ao preview.
+                </p>
+              ) : (
+                <p className="text-xs text-foreground/70 leading-relaxed">
+                  Digite sua ideia na <span className="text-foreground font-medium">caixa abaixo</span> e pressione{" "}
+                  <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-white/10 border border-white/20 font-mono">Enter</kbd>.
+                  O código vai aparecendo no editor enquanto a IA escreve.
+                </p>
+              )}
               <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
                 <span className="flex items-center gap-1">
                   <FileText className="h-3 w-3 text-yellow-400" /> cole textos longos → vira snippet
@@ -589,7 +793,10 @@ export default function VibeChatPanel({
               {msg.attachments && msg.attachments.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {msg.attachments.map((att) => (
-                    <div key={att.id} className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10">
+                    <div
+                      key={att.id}
+                      className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10"
+                    >
                       {att.type === "image" ? (
                         <>
                           <Image className="h-3 w-3 text-blue-400" />
@@ -611,7 +818,9 @@ export default function VibeChatPanel({
                     part.type === "code" ? (
                       <CodeBlock key={pi} content={part.content} lang={part.lang || ""} />
                     ) : (
-                      <span key={pi} className="whitespace-pre-wrap font-sans">{part.content}</span>
+                      <span key={pi} className="whitespace-pre-wrap font-sans">
+                        {part.content}
+                      </span>
                     ),
                   )}
                   {msg.isStreaming && (
@@ -625,6 +834,8 @@ export default function VibeChatPanel({
           </div>
         ))}
       </div>
+
+      <VibeFilesProgress files={vibeFiles} />
 
       {isStreaming && statusText && (
         <div className="px-3 py-1.5 flex-shrink-0 border-t border-white/5">
@@ -678,7 +889,9 @@ export default function VibeChatPanel({
                   ) : (
                     <>
                       <FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" />
-                      <span className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">{att.preview}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">
+                        {att.preview}
+                      </span>
                     </>
                   )}
                   <button
@@ -731,7 +944,9 @@ export default function VibeChatPanel({
                 ? "Aguarde a análise da stack..."
                 : isStreaming
                   ? "Aguarde a resposta..."
-                  : "Descreva o que quer construir... (/ para comandos)"
+                  : vibeMode
+                    ? "Descreva o sistema que quer criar... (ex: sistema de email)"
+                    : "Descreva o que quer construir... (/ para comandos)"
             }
             disabled={isAnalyzing || isStreaming}
             rows={1}
@@ -759,7 +974,7 @@ export default function VibeChatPanel({
                 className="h-7 px-3 rounded-lg text-xs font-mono bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 <Send className="h-3 w-3" />
-                Enviar
+                {vibeMode ? "Criar" : "Enviar"}
               </button>
             )}
           </div>

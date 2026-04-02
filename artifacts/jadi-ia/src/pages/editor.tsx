@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,9 +39,13 @@ import {
   Wand2,
   X,
   Bot,
+  Eye,
+  EyeOff,
+  Layers,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import VibeChatPanel from "@/components/VibeChatPanel";
+import PreviewPanel from "@/components/PreviewPanel";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -56,6 +60,25 @@ interface StackDecision {
   projectType: string;
   justification: string;
   systemPrompt: string;
+}
+
+function detectLanguageFromFilename(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    html: "html",
+    htm: "html",
+    css: "css",
+    js: "javascript",
+    ts: "typescript",
+    jsx: "javascript",
+    tsx: "typescript",
+    py: "python",
+    json: "json",
+    md: "markdown",
+    sql: "sql",
+    sh: "bash",
+  };
+  return map[ext] ?? "javascript";
 }
 
 export default function Editor() {
@@ -77,7 +100,11 @@ export default function Editor() {
   const [newSecretValue, setNewSecretValue] = useState("");
   const [stackDecision, setStackDecision] = useState<StackDecision | null>(null);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [vibeMode, setVibeMode] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
   const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingFileContentsRef = useRef<Record<string, string>>({});
 
   const { data: project, isLoading: loadingProject } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -133,10 +160,13 @@ export default function Editor() {
       },
       onError: () => {
         setHasAnalyzed(true);
-        setChatMessages([{
-          role: "assistant",
-          content: "Não consegui analisar a stack automaticamente. Descreva o que quer construir e eu escolho a melhor linguagem.",
-        }]);
+        setChatMessages([
+          {
+            role: "assistant",
+            content:
+              "Não consegui analisar a stack automaticamente. Descreva o que quer construir e eu escolho a melhor linguagem.",
+          },
+        ]);
       },
     },
   });
@@ -175,7 +205,19 @@ export default function Editor() {
         setSelectedFileId(file.id);
         setNewFileName("");
         setShowNewFile(false);
-        toast({ title: "Arquivo criado" });
+
+        const pendingContent = pendingFileContentsRef.current[file.name];
+        if (pendingContent !== undefined) {
+          delete pendingFileContentsRef.current[file.name];
+          setEditingContent(pendingContent);
+          updateFile.mutate({
+            id: projectId,
+            fileId: file.id,
+            data: { content: pendingContent },
+          });
+        } else {
+          toast({ title: "Arquivo criado" });
+        }
       },
     },
   });
@@ -237,7 +279,7 @@ export default function Editor() {
 
   function handleCreateFile() {
     if (!newFileName.trim()) return;
-    const effectiveLanguage = stackDecision?.language ?? project?.language ?? "javascript";
+    const effectiveLanguage = detectLanguageFromFilename(newFileName);
     createFile.mutate({
       id: projectId,
       data: { name: newFileName, language: effectiveLanguage },
@@ -277,9 +319,50 @@ export default function Editor() {
     }, 1500);
   }
 
+  const handleFileWrite = useCallback(
+    (filename: string, content: string) => {
+      const existingFile = files?.find((f) => f.name === filename);
+
+      if (existingFile) {
+        setSelectedFileId(existingFile.id);
+        setEditingContent(content);
+        if (liveUpdateTimerRef.current) clearTimeout(liveUpdateTimerRef.current);
+        updateFile.mutate({
+          id: projectId,
+          fileId: existingFile.id,
+          data: { content },
+        });
+      } else {
+        pendingFileContentsRef.current[filename] = content;
+        const lang = detectLanguageFromFilename(filename);
+        createFile.mutate({
+          id: projectId,
+          data: { name: filename, language: lang },
+        });
+      }
+
+      if (!showPreview) setShowPreview(true);
+    },
+    [files, projectId, showPreview],
+  );
+
+  function toggleVibeMode() {
+    const next = !vibeMode;
+    setVibeMode(next);
+    if (next) {
+      setShowChat(true);
+      setShowPreview(true);
+    }
+  }
+
   const effectiveLangLabel = isAutoMode
     ? stackDecision?.framework ?? "Automático"
     : project?.language ?? "";
+
+  const projectFilesForPreview = (files ?? []).map((f) => ({
+    name: f.name,
+    content: f.id === selectedFileId ? editingContent : "",
+  }));
 
   if (loadingProject) {
     return (
@@ -331,6 +414,7 @@ export default function Editor() {
           </Badge>
         </div>
         <div className="flex-1" />
+
         <Button
           variant="ghost"
           size="sm"
@@ -341,22 +425,54 @@ export default function Editor() {
           <Wand2 className="h-3.5 w-3.5" />
           Gerar Prompt
         </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowPreview(!showPreview)}
+          className={`h-7 text-xs gap-1 hidden sm:flex ${showPreview ? "text-teal-400" : ""}`}
+          title="Mostrar/ocultar preview"
+        >
+          {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          Preview
+        </Button>
+
+        <Button
+          size="sm"
+          onClick={toggleVibeMode}
+          data-testid="button-toggle-vibe"
+          className={`relative h-8 text-xs gap-1.5 px-3 transition-all duration-200 ${
+            vibeMode
+              ? "bg-teal-600 text-white shadow-[0_0_18px_rgba(0,150,136,0.5)]"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Vibe</span>
+          {vibeMode && (
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-teal-400 border border-background animate-pulse" />
+          )}
+        </Button>
+
         <Button
           size="sm"
           onClick={() => setShowChat(!showChat)}
           data-testid="button-toggle-chat"
           className={`relative h-8 text-xs gap-1.5 px-3 transition-all duration-200 ${
-            showChat
+            showChat && !vibeMode
               ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(139,92,246,0.45)]"
-              : "bg-primary/90 text-primary-foreground hover:bg-primary hover:shadow-[0_0_14px_rgba(139,92,246,0.35)]"
+              : showChat && vibeMode
+                ? "bg-primary/60 text-primary-foreground"
+                : "bg-primary/90 text-primary-foreground hover:bg-primary hover:shadow-[0_0_14px_rgba(139,92,246,0.35)]"
           }`}
         >
           {!showChat && (
             <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-400 border border-background animate-pulse" />
           )}
           <Cpu className="h-3.5 w-3.5" />
-          <span>Vibe Coding</span>
+          <span>IA</span>
         </Button>
+
         <Button
           size="sm"
           onClick={handleSave}
@@ -408,7 +524,12 @@ export default function Editor() {
                     data-testid="input-new-file-name"
                     autoFocus
                   />
-                  <Button size="icon" className="h-7 w-7 flex-shrink-0" onClick={handleCreateFile} data-testid="button-create-file">
+                  <Button
+                    size="icon"
+                    className="h-7 w-7 flex-shrink-0"
+                    onClick={handleCreateFile}
+                    data-testid="button-create-file"
+                  >
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -557,47 +678,65 @@ export default function Editor() {
               onLiveCodeUpdate={handleLiveCodeUpdate}
               onClose={() => setShowChat(false)}
               onReanalyze={handleReanalyze}
+              vibeMode={vibeMode}
+              onFileWrite={handleFileWrite}
             />
           )}
         </AnimatePresence>
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {selectedFileId && currentFile ? (
-            <div className="flex-1 flex overflow-hidden font-mono text-sm">
-              <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
-                {Array.from({ length: lineCount }, (_, i) => (
-                  <div key={i + 1}>{i + 1}</div>
-                ))}
+          <div className={`${showPreview ? "flex-1" : "flex-1"} flex overflow-hidden font-mono text-sm`} style={{ minHeight: 0 }}>
+            {selectedFileId && currentFile ? (
+              <>
+                <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
+                  {Array.from({ length: lineCount }, (_, i) => (
+                    <div key={i + 1}>{i + 1}</div>
+                  ))}
+                </div>
+                <textarea
+                  value={editingContent}
+                  onChange={(e) => setEditingContent(e.target.value)}
+                  className="flex-1 p-3 bg-background resize-none outline-none leading-6 text-sm font-mono overflow-auto"
+                  spellCheck={false}
+                  data-testid="editor-textarea"
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+                      e.preventDefault();
+                      handleSave();
+                    }
+                    if (e.key === "Tab") {
+                      e.preventDefault();
+                      const start = e.currentTarget.selectionStart;
+                      const end = e.currentTarget.selectionEnd;
+                      setEditingContent(
+                        editingContent.substring(0, start) + "  " + editingContent.substring(end),
+                      );
+                    }
+                  }}
+                />
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <p className="text-sm">Selecione um arquivo para editar</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {vibeMode
+                      ? "Ative o Vibe Coding e descreva o que quer criar"
+                      : "Ou abre o chat da IA para gerar código"}
+                  </p>
+                </div>
               </div>
-              <textarea
-                value={editingContent}
-                onChange={(e) => setEditingContent(e.target.value)}
-                className="flex-1 p-3 bg-background resize-none outline-none leading-6 text-sm font-mono overflow-auto"
-                spellCheck={false}
-                data-testid="editor-textarea"
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-                    e.preventDefault();
-                    handleSave();
-                  }
-                  if (e.key === "Tab") {
-                    e.preventDefault();
-                    const start = e.currentTarget.selectionStart;
-                    const end = e.currentTarget.selectionEnd;
-                    setEditingContent(
-                      editingContent.substring(0, start) + "  " + editingContent.substring(end),
-                    );
-                  }
-                }}
+            )}
+          </div>
+
+          {showPreview && currentFile && (
+            <div className="border-t border-border flex-shrink-0" style={{ height: "40%" }}>
+              <PreviewPanel
+                content={editingContent}
+                filename={currentFile.name}
+                projectFiles={projectFilesForPreview}
               />
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                <p className="text-sm">Selecione um arquivo para editar</p>
-                <p className="text-xs text-muted-foreground mt-1">Ou abre o chat da IA para gerar código</p>
-              </div>
             </div>
           )}
         </div>

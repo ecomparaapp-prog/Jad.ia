@@ -1,0 +1,34 @@
+Prompt: Ativação do Motor de Escrita de Arquivos (Vibe Coding)
+"Implemente a capacidade de Escrita Direta no Sistema de Arquivos para a IA do Jadi.ia. O objetivo é que, ao solicitar um 'Sistema de E-mail', a IA não apenas mostre o código no chat, mas execute as seguintes ações:
+
+Criação de Arquivos Real: A IA deve usar a API interna do Replit para criar arquivos físicos (ex: index.html, style.css, main.py) no diretório do projeto.
+
+Visualização em Tempo Real (Split View): Configure a interface para que, quando a IA começar a 'codar', a tela se divida:
+
+Lado Esquerdo: O Chat/Vibe de conversa.
+
+Lado Direito Superior: O Editor de Código (Monaco ou CodeMirror) mostrando o arquivo sendo escrito.
+
+Lado Direito Inferior: O Webview/Preview, que deve atualizar (Hot Reload) automaticamente a cada salvamento de arquivo pela IA.
+
+Lógica de 'Vibe Coding': >    * Quando eu disser 'Crie um sistema de e-mail', o Agente Analista deve primeiro listar os arquivos necessários.
+
+A IA Principal deve então começar a escrever o conteúdo de cada arquivo um por um.
+
+Conexão com Banco de Dados: Para o sistema de e-mail, instrua a IA a já criar as tabelas necessárias no PostgreSQL do Replit para armazenar as mensagens (Inboxed, Sent, Trash).
+
+Feedback de Progresso: Enquanto a IA escreve os arquivos, mostre uma barra de progresso ou logs como: 'Criando estrutura do banco...', 'Estilizando interface de entrada...', 'Configurando rotas de envio...'."
+
+Como visualizar isso funcionando no Replit:
+Para que você veja "algo real", o Replit Agent vai configurar um "Watcher". Funciona assim:
+
+A IA escreve: Ela envia o comando writeFile('app.js', 'conteúdo...').
+
+O Replit salva: O arquivo aparece na árvore de arquivos à esquerda do Replit.
+
+O Preview renderiza: Como o Replit já tem um servidor de desenvolvimento rodando (HMR - Hot Module Replacement), a tela do seu app (o sistema de e-mail) vai mudar na hora.
+
+Exemplo do que pedir após o prompt acima:
+"Jadi, agora crie a interface de um sistema de e-mail rústico usando a nossa paleta de cores. Quero ver a lista de mensagens recebidas e um botão grande de 'Escrever'."
+
+Resultado esperado: Você verá os arquivos HTML/CSS surgindo e a interface do sistema de e-mail aparecendo no painel de visualização lateral, exatamente como o Replit Agent faz com você.

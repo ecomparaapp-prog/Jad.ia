@@ -90,10 +90,13 @@ Features:
 - **Vibe Coding** (`VibeChatPanel.tsx`): SSE streaming chat, code injects into editor in real-time
   - Multimodal input: paste/drag images → Groq vision model (`meta-llama/llama-4-scout-17b-16e-instruct`)
   - Long text auto-collapse: paste >600 chars → becomes a collapsible "document snippet"
-  - Quick commands: `/setup`, `/fix`, `/style`, `/explain`, `/test`, `/refactor`
+  - Quick commands: `/setup`, `/fix`, `/style`, `/explain`, `/test`, `/refactor`, `/vibe`
   - Status indicators: "Arquitetando...", "Escrevendo código..." cycling during streaming
   - Glassmorphism design (backdrop-blur, semi-transparent panels)
   - Code blocks auto-detected and auto-saved to current file after 1.5s debounce
+- **Motor de Vibe Coding (multi-arquivo)**: quando `vibeMode=true`, a IA usa marcadores `===FILE: name.ext===` / `===END_FILE===` para gerar múltiplos arquivos. Cada arquivo completo é criado/atualizado automaticamente no DB via API. Progresso exibido no painel lateral (VibeFilesProgress).
+- **PreviewPanel** (`PreviewPanel.tsx`): painel de preview abaixo do editor. Para arquivos `.html`, usa `srcdoc` com CSS/JS injetados dos outros arquivos do projeto. Para outros tipos, exibe o código com sintaxe simples. Botão de reload manual.
+- **Split view**: barra superior tem botão "Vibe" (modo multi-arquivo, teal) e botão "Preview" (mostra/oculta painel inferior). Quando Vibe é ativado, o chat e preview abrem automaticamente.
 - **Agente Analista**: auto-detects best tech stack for "Automático" language projects
 - File manager sidebar
 - Secrets manager sidebar
