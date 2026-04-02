@@ -3,17 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Send,
-  Bot,
   RefreshCw,
   Image,
   FileText,
   Trash2,
-  Zap,
   Copy,
   Check,
   FolderOpen,
   CheckCircle2,
   Loader2,
+  Search,
+  Terminal,
+  AlertCircle,
 } from "lucide-react";
 
 interface Attachment {
@@ -29,6 +30,7 @@ interface ChatMessage {
   attachments?: Attachment[];
   isStreaming?: boolean;
   isDecision?: boolean;
+  agentType?: "analise" | "construcao";
 }
 
 interface StackDecision {
@@ -70,12 +72,20 @@ const QUICK_COMMANDS = [
   { cmd: "/vibe", desc: "Cria um projeto completo com múltiplos arquivos" },
 ];
 
-const STATUS_MESSAGES = [
-  "Jadi.ia está analisando sua ideia...",
-  "Arquitetando os componentes...",
-  "Escrevendo o código...",
-  "Aplicando estrutura...",
-  "Finalizando...",
+const ANALYST_STATUS = [
+  "SISTEMA ANALISTA — Processando requisitos...",
+  "Avaliando arquitetura de software...",
+  "Gerando diagnóstico técnico...",
+  "Estruturando plano de implementação...",
+  "Finalizando análise...",
+];
+
+const BUILDER_STATUS = [
+  "SISTEMA CONSTRUTOR — Inicializando...",
+  "Arquitetando componentes...",
+  "Escrevendo código-fonte...",
+  "Aplicando estrutura de arquivos...",
+  "Compilando saída...",
 ];
 
 const VIBE_SYSTEM_PROMPT = `
@@ -83,7 +93,7 @@ MODO VIBE CODING ATIVO — CRIAÇÃO AUTOMÁTICA DE ARQUIVOS:
 Quando solicitado a criar um sistema, app ou projeto completo, siga SEMPRE este processo:
 
 1. Primeiro, descreva brevemente (1-2 frases) o que vai construir.
-2. Liste os arquivos: "📁 Arquivos: index.html, style.css, app.js"
+2. Liste os arquivos: "Arquivos: index.html, style.css, app.js"
 3. Para CADA arquivo, use EXATAMENTE este formato (sem variações):
 
 ===FILE: nome_do_arquivo.extensao===
@@ -99,6 +109,12 @@ REGRAS OBRIGATÓRIAS:
 - Para JS, use código limpo e comentado
 - Não use placeholders — escreva o código real e funcional
 `;
+
+const OLIVE_GREEN = "#414833";
+const TERRACOTTA = "#582f0e";
+const OLIVE_LIGHT = "rgba(65,72,51,0.15)";
+const TERRACOTTA_LIGHT = "rgba(88,47,14,0.15)";
+const BEIGE = "#f5f0e8";
 
 function extractAllCodeBlocks(text: string): Array<{ code: string; lang: string }> {
   const regex = /```(\w*)\n([\s\S]*?)```/g;
@@ -144,14 +160,51 @@ function CodeBlock({ content, lang }: { content: string; lang: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/40 my-2 font-mono text-xs">
-      <div className="flex items-center justify-between px-3 py-1 bg-white/5 border-b border-white/10">
-        <span className="text-muted-foreground text-[10px]">{lang || "code"}</span>
-        <button onClick={copy} className="text-muted-foreground hover:text-foreground transition-colors">
-          {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+    <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/40 my-2">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 border-b border-white/10">
+        <span className="text-muted-foreground text-[10px] font-mono uppercase tracking-wider">{lang || "código"}</span>
+        <button
+          onClick={copy}
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-[10px] font-mono"
+          title="Copiar código"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-green-400" />
+              <span className="text-green-400">Copiado</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              <span>Copiar</span>
+            </>
+          )}
         </button>
       </div>
-      <pre className="p-3 overflow-x-auto leading-relaxed text-[11px] text-foreground/90">{content}</pre>
+      <pre className="p-3 overflow-x-auto leading-relaxed text-[11px] text-foreground/90 font-mono">{content}</pre>
+    </div>
+  );
+}
+
+function AgentBadge({ type }: { type: "analise" | "construcao" }) {
+  if (type === "analise") {
+    return (
+      <div
+        className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-semibold uppercase tracking-widest mb-1.5"
+        style={{ background: OLIVE_LIGHT, color: OLIVE_GREEN, border: `1px solid ${OLIVE_GREEN}40` }}
+      >
+        <Search className="h-2.5 w-2.5" />
+        SISTEMA ANALISTA
+      </div>
+    );
+  }
+  return (
+    <div
+      className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-semibold uppercase tracking-widest mb-1.5"
+      style={{ background: TERRACOTTA_LIGHT, color: TERRACOTTA, border: `1px solid ${TERRACOTTA}40` }}
+    >
+      <Terminal className="h-2.5 w-2.5" />
+      SISTEMA CONSTRUTOR
     </div>
   );
 }
@@ -185,12 +238,8 @@ function VibeFilesProgress({ files }: { files: VibeFile[] }) {
             >
               {f.name}
             </span>
-            {f.status === "done" && (
-              <span className="text-[9px] font-mono text-green-500/70">salvo</span>
-            )}
-            {f.status === "writing" && (
-              <span className="text-[9px] font-mono text-teal-400/70 animate-pulse">escrevendo...</span>
-            )}
+            {f.status === "done" && <span className="text-[9px] font-mono text-green-500/70">salvo</span>}
+            {f.status === "writing" && <span className="text-[9px] font-mono text-teal-400/70 animate-pulse">escrevendo...</span>}
           </div>
         ))}
       </div>
@@ -222,6 +271,9 @@ export default function VibeChatPanel({
   const [isDragging, setIsDragging] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
   const [vibeFiles, setVibeFiles] = useState<VibeFile[]>([]);
+  const [activeAgent, setActiveAgent] = useState<"analise" | "construcao">("construcao");
+  const [providerSwitchMsg, setProviderSwitchMsg] = useState("");
+  const [analysisContext, setAnalysisContext] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -248,10 +300,11 @@ export default function VibeChatPanel({
   }, [messages, isStreaming, vibeFiles]);
 
   useEffect(() => {
+    const statusList = activeAgent === "analise" ? ANALYST_STATUS : BUILDER_STATUS;
     if (isStreaming) {
       setStatusIndex(0);
       statusTimerRef.current = setInterval(() => {
-        setStatusIndex((i) => (i + 1) % STATUS_MESSAGES.length);
+        setStatusIndex((i) => (i + 1) % statusList.length);
       }, 2500);
     } else {
       if (statusTimerRef.current) clearInterval(statusTimerRef.current);
@@ -260,11 +313,12 @@ export default function VibeChatPanel({
     return () => {
       if (statusTimerRef.current) clearInterval(statusTimerRef.current);
     };
-  }, [isStreaming]);
+  }, [isStreaming, activeAgent]);
 
   useEffect(() => {
-    if (isStreaming) setStatusText(STATUS_MESSAGES[statusIndex]);
-  }, [statusIndex, isStreaming]);
+    const statusList = activeAgent === "analise" ? ANALYST_STATUS : BUILDER_STATUS;
+    if (isStreaming) setStatusText(statusList[statusIndex]);
+  }, [statusIndex, isStreaming, activeAgent]);
 
   const autoResize = () => {
     const ta = textareaRef.current;
@@ -296,11 +350,7 @@ export default function VibeChatPanel({
       const text = e.clipboardData.getData("text");
       if (text.length > 600) {
         e.preventDefault();
-        addAttachment({
-          type: "snippet",
-          preview: text.slice(0, 60) + "…",
-          content: text,
-        });
+        addAttachment({ type: "snippet", preview: text.slice(0, 60) + "…", content: text });
       }
     },
     [addAttachment],
@@ -341,7 +391,7 @@ export default function VibeChatPanel({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSend(activeAgent);
     }
     if (e.key === "Escape") setShowCommands(false);
   };
@@ -377,7 +427,6 @@ export default function VibeChatPanel({
     while ((match = completedRegex.exec(text)) !== null) {
       const filename = match[1].trim();
       const content = match[2];
-
       if (!processedFilesRef.current.has(filename)) {
         processedFilesRef.current.add(filename);
         newlyCompleted.push(filename);
@@ -390,11 +439,8 @@ export default function VibeChatPanel({
         const updated = [...prev];
         for (const name of newlyCompleted) {
           const idx = updated.findIndex((f) => f.name === name);
-          if (idx >= 0) {
-            updated[idx] = { ...updated[idx], status: "done" };
-          } else {
-            updated.push({ name, status: "done" });
-          }
+          if (idx >= 0) updated[idx] = { ...updated[idx], status: "done" };
+          else updated.push({ name, status: "done" });
         }
         return updated;
       });
@@ -403,9 +449,7 @@ export default function VibeChatPanel({
     const fileStartRegex = /===FILE: ([^\n=]+)===/g;
     let lastFileMatch: RegExpExecArray | null = null;
     let m: RegExpExecArray | null;
-    while ((m = fileStartRegex.exec(text)) !== null) {
-      lastFileMatch = m;
-    }
+    while ((m = fileStartRegex.exec(text)) !== null) lastFileMatch = m;
 
     if (lastFileMatch) {
       const filename = lastFileMatch[1].trim();
@@ -417,14 +461,11 @@ export default function VibeChatPanel({
           const afterContent = text.slice(contentStart);
           const endMarkerPos = afterContent.indexOf("===END_FILE===");
           const currentContent = endMarkerPos >= 0 ? afterContent.slice(0, endMarkerPos) : afterContent;
-
           const ext = filename.split(".").pop() || "";
           onLiveCodeUpdate(currentContent.replace(/^\n/, ""), ext);
 
           setVibeFiles((prev) => {
-            if (!prev.find((f) => f.name === filename)) {
-              return [...prev, { name: filename, status: "writing" }];
-            }
+            if (!prev.find((f) => f.name === filename)) return [...prev, { name: filename, status: "writing" }];
             return prev.map((f) => (f.name === filename ? { ...f, status: "writing" } : f));
           });
 
@@ -434,10 +475,13 @@ export default function VibeChatPanel({
     }
   }
 
-  const handleSend = async () => {
-    const trimmed = input.trim();
+  const handleSend = async (taskType: "analise" | "construcao" = "construcao", overrideInput?: string) => {
+    const trimmed = (overrideInput ?? input).trim();
     if (!trimmed && attachments.length === 0) return;
     if (isStreaming) return;
+
+    setActiveAgent(taskType);
+    setProviderSwitchMsg("");
 
     const userContent = buildUserContent();
     const userMsg: ChatMessage = {
@@ -445,6 +489,11 @@ export default function VibeChatPanel({
       content: typeof userContent === "string" ? userContent : trimmed || "[imagem anexada]",
       attachments: [...attachments],
     };
+
+    let contextPrefix = "";
+    if (taskType === "construcao" && analysisContext) {
+      contextPrefix = `[Contexto do Analista]:\n${analysisContext}\n\n[Instrução do usuário]:\n`;
+    }
 
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -459,6 +508,7 @@ export default function VibeChatPanel({
       role: "assistant",
       content: "",
       isStreaming: true,
+      agentType: taskType,
     };
     setMessages([...updatedMessages, assistantPlaceholder]);
     setIsStreaming(true);
@@ -472,7 +522,11 @@ export default function VibeChatPanel({
       .map((m) => ({
         role: m.role,
         content:
-          m.role === "user" && m.attachments?.some((a) => a.type === "image") ? userContent : m.content,
+          m.role === "user" && m.attachments?.some((a) => a.type === "image")
+            ? userContent
+            : contextPrefix && m === userMsg
+              ? contextPrefix + m.content
+              : m.content,
       }));
 
     const effectiveLanguage =
@@ -483,7 +537,9 @@ export default function VibeChatPanel({
         : language;
 
     const extraSystemPrompt = vibeMode
-      ? (stackDecision?.systemPrompt ? `${stackDecision.systemPrompt}\n\n${VIBE_SYSTEM_PROMPT}` : VIBE_SYSTEM_PROMPT)
+      ? stackDecision?.systemPrompt
+        ? `${stackDecision.systemPrompt}\n\n${VIBE_SYSTEM_PROMPT}`
+        : VIBE_SYSTEM_PROMPT
       : stackDecision?.systemPrompt ?? null;
 
     try {
@@ -498,13 +554,12 @@ export default function VibeChatPanel({
           projectContext: `Projeto: ${projectName}${currentFileName ? `, Arquivo: ${currentFileName}` : ""}`,
           language: effectiveLanguage,
           systemPrompt: extraSystemPrompt,
+          taskType,
         }),
         signal: ctrl.signal,
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error("Stream não disponível");
-      }
+      if (!response.ok || !response.body) throw new Error("Stream não disponível");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -519,9 +574,7 @@ export default function VibeChatPanel({
           setMessages((prev) => {
             const copy = [...prev];
             const last = copy[copy.length - 1];
-            if (last?.isStreaming) {
-              copy[copy.length - 1] = { ...last, content: displayContent };
-            }
+            if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: displayContent };
             return copy;
           });
         } else {
@@ -534,9 +587,7 @@ export default function VibeChatPanel({
           setMessages((prev) => {
             const copy = [...prev];
             const last = copy[copy.length - 1];
-            if (last?.isStreaming) {
-              copy[copy.length - 1] = { ...last, content: accumulated };
-            }
+            if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: accumulated };
             return copy;
           });
         }
@@ -557,7 +608,7 @@ export default function VibeChatPanel({
           if (!payload) continue;
 
           try {
-            const evt = JSON.parse(payload) as { token?: string };
+            const evt = JSON.parse(payload) as { token?: string; message?: string };
             if (evt.token) {
               accumulated += evt.token;
               flush();
@@ -565,35 +616,35 @@ export default function VibeChatPanel({
           } catch {
             if (payload === "done" || payload === "{}") break;
           }
+
+          if (trimmedLine.startsWith("event: provider_switch")) {
+            setProviderSwitchMsg("Alternando provedor por estabilidade...");
+          }
         }
       }
 
-      if (vibeMode) {
-        processVibeStream(accumulated);
-        const displayContent = stripVibeMarkers(accumulated);
-        setMessages((prev) => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.isStreaming) {
-            copy[copy.length - 1] = { ...last, content: displayContent, isStreaming: false };
-          }
-          return copy;
-        });
-      } else {
+      const finalContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
+
+      if (vibeMode) processVibeStream(accumulated);
+
+      if (!vibeMode) {
         const finalBlocks = extractAllCodeBlocks(accumulated);
         if (finalBlocks.length > 0) {
           const last = finalBlocks[finalBlocks.length - 1];
           onLiveCodeUpdate(last.code, last.lang);
         }
-        setMessages((prev) => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.isStreaming) {
-            copy[copy.length - 1] = { ...last, content: accumulated, isStreaming: false };
-          }
-          return copy;
-        });
       }
+
+      if (taskType === "analise") {
+        setAnalysisContext(accumulated);
+      }
+
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: finalContent, isStreaming: false };
+        return copy;
+      });
     } catch (err: unknown) {
       if ((err as Error).name === "AbortError") return;
       setMessages((prev) => {
@@ -614,15 +665,23 @@ export default function VibeChatPanel({
     }
   };
 
+  const handleAnalystRequest = () => {
+    if (!input.trim() && attachments.length === 0) return;
+    handleSend("analise");
+  };
+
+  const handleBuilderRequest = () => {
+    if (!input.trim() && attachments.length === 0) return;
+    handleSend("construcao");
+  };
+
   const stopStream = () => {
     abortRef.current?.abort();
     setIsStreaming(false);
     setMessages((prev) => {
       const copy = [...prev];
       const last = copy[copy.length - 1];
-      if (last?.isStreaming) {
-        copy[copy.length - 1] = { ...last, isStreaming: false };
-      }
+      if (last?.isStreaming) copy[copy.length - 1] = { ...last, isStreaming: false };
       return copy;
     });
   };
@@ -632,7 +691,7 @@ export default function VibeChatPanel({
   return (
     <motion.div
       initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 360, opacity: 1 }}
+      animate={{ width: 380, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="flex-shrink-0 border-r border-border flex flex-col overflow-hidden"
@@ -641,10 +700,7 @@ export default function VibeChatPanel({
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
       }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setIsDragging(true);
-      }}
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
@@ -663,12 +719,25 @@ export default function VibeChatPanel({
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_hsl(var(--primary)/0.25)]">
-              <Zap className="h-4.5 w-4.5 text-primary" style={{ height: "1.1rem", width: "1.1rem" }} />
+            <div className="flex gap-1.5">
+              <div
+                className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}50` }}
+                title="Sistema Analista"
+              >
+                <Search className="h-4 w-4" style={{ color: OLIVE_GREEN }} />
+              </div>
+              <div
+                className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}50` }}
+                title="Sistema Construtor"
+              >
+                <Terminal className="h-4 w-4" style={{ color: TERRACOTTA }} />
+              </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground leading-none">Vibe Coding</span>
+                <span className="text-sm font-semibold text-foreground leading-none">Jadi.ia</span>
                 {vibeMode && (
                   <span className="text-[10px] font-mono bg-teal-500/15 text-teal-400 border border-teal-500/25 px-1.5 py-0.5 rounded-full">
                     multi-arquivo
@@ -682,9 +751,7 @@ export default function VibeChatPanel({
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">
                 {isAutoMode && stackDecision
                   ? `Stack: ${stackDecision.framework} · ${stackDecision.language}`
-                  : vibeMode
-                    ? "IA escreve arquivos automaticamente"
-                    : "Descreva, a IA constrói em tempo real"}
+                  : "Analista (Gemini) + Construtor (Groq)"}
               </p>
             </div>
           </div>
@@ -710,43 +777,36 @@ export default function VibeChatPanel({
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth">
         {messages.length === 0 && !isAnalyzing && (
-          <div className="flex flex-col items-center justify-center h-full gap-5 px-2 py-8 text-center">
-            <div
-              className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left"
-              style={{ boxShadow: "inset 0 0 20px hsl(var(--primary) / 0.06)" }}
-            >
-              <p className="text-[11px] font-mono text-primary/80 mb-2 flex items-center gap-1.5">
-                <Zap className="h-3 w-3" />
-                {vibeMode ? "Motor de Vibe Coding ativo" : "Como usar"}
-              </p>
-              {vibeMode ? (
-                <p className="text-xs text-foreground/70 leading-relaxed">
-                  Descreva o <span className="text-foreground font-medium">sistema completo</span> que quer criar.
-                  A IA vai gerar todos os arquivos automaticamente e eles serão{" "}
-                  <span className="text-teal-400 font-medium">salvos no projeto</span> enquanto você assiste ao preview.
-                </p>
-              ) : (
-                <p className="text-xs text-foreground/70 leading-relaxed">
-                  Digite sua ideia na <span className="text-foreground font-medium">caixa abaixo</span> e pressione{" "}
-                  <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-white/10 border border-white/20 font-mono">Enter</kbd>.
-                  O código vai aparecendo no editor enquanto a IA escreve.
-                </p>
-              )}
-              <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
-                <span className="flex items-center gap-1">
-                  <FileText className="h-3 w-3 text-yellow-400" /> cole textos longos → vira snippet
-                </span>
-                <span>·</span>
-                <span className="flex items-center gap-1">
-                  <Image className="h-3 w-3 text-blue-400" /> cole imagens → visão IA
-                </span>
+          <div className="flex flex-col items-center justify-center h-full gap-4 px-2 py-8 text-center">
+            <div className="w-full grid grid-cols-2 gap-2">
+              <div
+                className="rounded-xl p-3 text-left"
+                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}40` }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Search className="h-3.5 w-3.5" style={{ color: OLIVE_GREEN }} />
+                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider" style={{ color: OLIVE_GREEN }}>
+                    Analista
+                  </span>
+                </div>
+                <p className="text-[10px] text-foreground/60 leading-relaxed">Diagnóstico técnico e plano de arquitetura</p>
+              </div>
+              <div
+                className="rounded-xl p-3 text-left"
+                style={{ background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}40` }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Terminal className="h-3.5 w-3.5" style={{ color: TERRACOTTA }} />
+                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider" style={{ color: TERRACOTTA }}>
+                    Construtor
+                  </span>
+                </div>
+                <p className="text-[10px] text-foreground/60 leading-relaxed">Executa o plano e escreve os arquivos</p>
               </div>
             </div>
 
             <div className="w-full space-y-1">
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider text-left mb-2">
-                Comandos rápidos
-              </p>
+              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider text-left mb-2">Comandos rápidos</p>
               {QUICK_COMMANDS.map((c) => (
                 <button
                   key={c.cmd}
@@ -764,15 +824,20 @@ export default function VibeChatPanel({
         {isAnalyzing && messages.length === 0 && (
           <div className="flex flex-col items-center py-12 gap-4">
             <div className="relative">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Bot className="h-6 w-6 text-primary" />
+              <div
+                className="h-12 w-12 rounded-xl flex items-center justify-center"
+                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}40` }}
+              >
+                <Search className="h-6 w-6" style={{ color: OLIVE_GREEN }} />
               </div>
               <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-background border border-primary/40 flex items-center justify-center">
                 <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               </div>
             </div>
             <div className="text-center">
-              <p className="text-xs font-mono text-foreground/70 mb-1">Agente Analista</p>
+              <p className="text-xs font-mono font-semibold uppercase tracking-wider mb-1" style={{ color: OLIVE_GREEN }}>
+                Sistema Analista
+              </p>
               <p className="text-xs text-muted-foreground">Selecionando a melhor stack tecnológica...</p>
             </div>
           </div>
@@ -780,62 +845,91 @@ export default function VibeChatPanel({
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} gap-2`}>
-            <div
-              className={`max-w-[88%] rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-tr-sm"
-                  : msg.isDecision
-                    ? "bg-primary/10 border border-primary/20 text-foreground rounded-tl-sm"
-                    : "bg-white/8 border border-white/10 text-foreground/90 rounded-tl-sm"
-              }`}
-              style={msg.role === "assistant" && !msg.isDecision ? { background: "rgba(255,255,255,0.05)" } : {}}
-            >
-              {msg.attachments && msg.attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {msg.attachments.map((att) => (
-                    <div
-                      key={att.id}
-                      className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10"
-                    >
-                      {att.type === "image" ? (
-                        <>
-                          <Image className="h-3 w-3 text-blue-400" />
-                          <img src={att.preview} alt="" className="h-6 w-6 rounded object-cover" />
-                        </>
+            <div className={`max-w-[90%] ${msg.role === "user" ? "" : ""}`}>
+              {msg.role === "assistant" && msg.agentType && <AgentBadge type={msg.agentType} />}
+              <div
+                className={`rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-tr-sm"
+                    : msg.isDecision
+                      ? "bg-primary/10 border border-primary/20 text-foreground rounded-tl-sm"
+                      : msg.agentType === "analise"
+                        ? "rounded-tl-sm"
+                        : "rounded-tl-sm"
+                }`}
+                style={
+                  msg.role === "assistant"
+                    ? msg.agentType === "analise"
+                      ? { background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}30` }
+                      : { background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}30` }
+                    : {}
+                }
+              >
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {msg.attachments.map((att) => (
+                      <div
+                        key={att.id}
+                        className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10"
+                      >
+                        {att.type === "image" ? (
+                          <>
+                            <Image className="h-3 w-3 text-blue-400" />
+                            <img src={att.preview} alt="" className="h-6 w-6 rounded object-cover" />
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-3 w-3 text-yellow-400" />
+                            <span className="text-[10px] text-muted-foreground font-mono">{att.preview}</span>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {msg.role === "assistant" ? (
+                  <div>
+                    {formatMessage(msg.content).parts.map((part, pi) =>
+                      part.type === "code" ? (
+                        <CodeBlock key={pi} content={part.content} lang={part.lang || ""} />
                       ) : (
-                        <>
-                          <FileText className="h-3 w-3 text-yellow-400" />
-                          <span className="text-[10px] text-muted-foreground font-mono">{att.preview}</span>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {msg.role === "assistant" ? (
-                <div>
-                  {formatMessage(msg.content).parts.map((part, pi) =>
-                    part.type === "code" ? (
-                      <CodeBlock key={pi} content={part.content} lang={part.lang || ""} />
-                    ) : (
-                      <span key={pi} className="whitespace-pre-wrap font-sans">
-                        {part.content}
-                      </span>
-                    ),
-                  )}
-                  {msg.isStreaming && (
-                    <span className="inline-block w-1.5 h-3.5 bg-primary/70 ml-0.5 animate-pulse rounded-sm align-middle" />
-                  )}
-                </div>
-              ) : (
-                <span className="whitespace-pre-wrap">{msg.content}</span>
-              )}
+                        <span
+                          key={pi}
+                          className="whitespace-pre-wrap"
+                          style={{
+                            fontFamily: msg.agentType === "analise" ? "'Inter', 'system-ui', sans-serif" : undefined,
+                          }}
+                        >
+                          {part.content}
+                        </span>
+                      ),
+                    )}
+                    {msg.isStreaming && (
+                      <span
+                        className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle"
+                        style={{ background: msg.agentType === "analise" ? OLIVE_GREEN : TERRACOTTA }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <span className="whitespace-pre-wrap">{msg.content}</span>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       <VibeFilesProgress files={vibeFiles} />
+
+      {providerSwitchMsg && !isStreaming && (
+        <div className="px-3 py-1.5 flex-shrink-0">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+            <AlertCircle className="h-3 w-3 text-yellow-500" />
+            {providerSwitchMsg}
+          </div>
+        </div>
+      )}
 
       {isStreaming && statusText && (
         <div className="px-3 py-1.5 flex-shrink-0 border-t border-white/5">
@@ -844,8 +938,11 @@ export default function VibeChatPanel({
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="h-1 w-1 rounded-full bg-primary/70"
-                  style={{ animation: `pulse 1.2s ${i * 0.2}s infinite` }}
+                  className="h-1 w-1 rounded-full"
+                  style={{
+                    background: activeAgent === "analise" ? OLIVE_GREEN : TERRACOTTA,
+                    animation: `pulse 1.2s ${i * 0.2}s infinite`,
+                  }}
                 />
               ))}
             </div>
@@ -889,9 +986,7 @@ export default function VibeChatPanel({
                   ) : (
                     <>
                       <FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" />
-                      <span className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">
-                        {att.preview}
-                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">{att.preview}</span>
                     </>
                   )}
                   <button
@@ -945,7 +1040,7 @@ export default function VibeChatPanel({
                 : isStreaming
                   ? "Aguarde a resposta..."
                   : vibeMode
-                    ? "Descreva o sistema que quer criar... (ex: sistema de email)"
+                    ? "Descreva o sistema que quer criar..."
                     : "Descreva o que quer construir... (/ para comandos)"
             }
             disabled={isAnalyzing || isStreaming}
@@ -953,29 +1048,62 @@ export default function VibeChatPanel({
             className="w-full bg-transparent px-3 pt-2.5 pb-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 resize-none outline-none leading-relaxed disabled:opacity-50"
             style={{ maxHeight: "180px" }}
           />
-          <div className="flex items-center justify-between px-2 pb-2">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50 font-mono">
-              <span>Enter ↵ envia</span>
-              <span className="mx-1">·</span>
-              <span>Shift+Enter quebra linha</span>
-            </div>
+          <div className="px-2 pb-2 pt-1">
             {isStreaming ? (
               <button
                 onClick={stopStream}
-                className="h-7 px-3 rounded-lg text-xs font-mono bg-destructive/20 text-destructive border border-destructive/30 hover:bg-destructive/30 transition-colors flex items-center gap-1.5"
+                className="w-full h-10 rounded-lg text-xs font-mono bg-destructive/20 text-destructive border border-destructive/30 hover:bg-destructive/30 transition-colors flex items-center justify-center gap-1.5"
               >
-                <X className="h-3 w-3" />
-                Parar
+                <X className="h-3.5 w-3.5" />
+                Parar geração
               </button>
             ) : (
-              <button
-                onClick={handleSend}
-                disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
-                className="h-7 px-3 rounded-lg text-xs font-mono bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-              >
-                <Send className="h-3 w-3" />
-                {vibeMode ? "Criar" : "Enviar"}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAnalystRequest}
+                  disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
+                  className="flex-1 h-11 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: BEIGE,
+                    color: OLIVE_GREEN,
+                    border: `1.5px solid ${OLIVE_GREEN}60`,
+                    boxShadow: `0 2px 8px ${OLIVE_GREEN}20`,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${OLIVE_GREEN}35`;
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${OLIVE_GREEN}20`;
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Solicitar Análise
+                </button>
+                <button
+                  onClick={handleBuilderRequest}
+                  disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
+                  className="flex-1 h-11 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: OLIVE_GREEN,
+                    color: BEIGE,
+                    border: `1.5px solid ${OLIVE_GREEN}`,
+                    boxShadow: `0 2px 8px ${OLIVE_GREEN}30`,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${OLIVE_GREEN}50`;
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${OLIVE_GREEN}30`;
+                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  }}
+                >
+                  <Terminal className="h-3.5 w-3.5" />
+                  {vibeMode ? "Iniciar Vibe Coding" : "Construir"}
+                </button>
+              </div>
             )}
           </div>
         </div>
