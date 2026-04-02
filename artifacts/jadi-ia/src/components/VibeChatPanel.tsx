@@ -143,14 +143,16 @@ export default function VibeChatPanel({
   const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
 
   useEffect(() => {
+    if (isStreaming) return;
     lastParentMessagesRef.current = initialMessages;
     setMessages(initialMessages);
   }, [initialMessages]);
 
   useEffect(() => {
+    if (isStreaming) return;
     if (messages === lastParentMessagesRef.current) return;
     onMessagesChange(messages);
-  }, [messages]);
+  }, [messages, isStreaming]);
 
   useEffect(() => {
     if (scrollRef.current) {
