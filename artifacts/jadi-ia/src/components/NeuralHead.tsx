@@ -350,8 +350,11 @@ export function NeuralHead({ className = "" }: { className?: string }) {
   useEffect(() => {
     try {
       const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-      setWebGLSupported(!!ctx);
+      canvas.width = 1;
+      canvas.height = 1;
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, failIfMajorPerformanceCaveat: false });
+      renderer.dispose();
+      setWebGLSupported(true);
     } catch {
       setWebGLSupported(false);
     }
