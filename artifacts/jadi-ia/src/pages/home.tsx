@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import {
   Code2, Zap, Globe, Smartphone, GitBranch,
   ArrowRight, Bot, Layers, Terminal, Shield,
-  BarChart3, Users, FolderOpen, Clock
+  BarChart3
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SurrealHead } from "@/components/SurrealHead";
@@ -26,12 +26,6 @@ const services = [
   { icon: GitBranch, title: "Controle de Versão", desc: "Integração com GitHub para versionamento e colaboração.", accent: "secondary" },
 ];
 
-const stats = [
-  { icon: Users, value: "10K+", label: "Desenvolvedores" },
-  { icon: FolderOpen, value: "50K+", label: "Projetos Criados" },
-  { icon: Zap, value: "2M+", label: "Linhas Geradas" },
-  { icon: Clock, value: "24/7", label: "Disponibilidade" },
-];
 
 const techStack = [
   { Logo: JSLogo, name: "JavaScript" },
@@ -279,29 +273,11 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          SERVICES
+          SERVICES — compact 4×2 grid
       ══════════════════════════════════ */}
-      <section style={{ background: BG, paddingTop: "6rem", paddingBottom: "6rem" }}>
+      <section style={{ background: BG_ALT, paddingTop: "3rem", paddingBottom: "3rem" }}>
         <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="text-center mb-16"
-          >
-            <p className="text-xs uppercase tracking-widest mb-3 text-emerald-600" style={{ fontFamily: "var(--app-font-mono)" }}>
-              O que a jad.ia faz
-            </p>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900" style={{ fontFamily: "var(--app-font-serif)" }}>
-              Nossos Serviços
-            </h2>
-            <p className="text-gray-400 max-w-lg mx-auto">
-              Uma plataforma completa para criar qualquer tipo de software com o poder da IA.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {services.map((s, i) => (
               <motion.div
                 key={s.title}
@@ -310,79 +286,46 @@ export default function Home() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={fadeUp}
-                whileHover={{ y: -5, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 280, damping: 22 }}
+                whileHover={{ y: -3, scale: 1.015 }}
+                transition={{ type: "spring", stiffness: 300, damping: 24 }}
               >
                 <div
-                  className="h-full flex flex-col p-5"
+                  className="flex items-center gap-3 px-4 py-3"
                   style={{
-                    borderRadius: "1.5rem",
-                    background: "rgba(255,255,255,0.9)",
+                    borderRadius: "1rem",
+                    background: "rgba(255,255,255,0.88)",
                     border: `1px solid ${BORDER}`,
-                    boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
+                    boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+                    transition: "border-color 0.18s, box-shadow 0.18s",
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = s.accent === "primary" ? "rgba(0,137,123,0.30)" : "rgba(255,107,53,0.30)";
-                    e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.08)";
+                    e.currentTarget.style.borderColor = s.accent === "primary" ? "rgba(0,137,123,0.28)" : "rgba(255,107,53,0.28)";
+                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.07)";
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.borderColor = BORDER;
-                    e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.04)";
+                    e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.04)";
                   }}
                 >
                   <div
-                    className="h-10 w-10 rounded-2xl flex items-center justify-center mb-4 flex-shrink-0 text-white"
+                    className="h-8 w-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white"
                     style={{
                       background: s.accent === "primary"
                         ? "linear-gradient(135deg, #00695C 0%, #26A69A 100%)"
                         : "linear-gradient(135deg, #E65100 0%, #FFA726 100%)",
-                      boxShadow: s.accent === "primary"
-                        ? "0 4px 12px rgba(38,166,154,0.25)"
-                        : "0 4px 12px rgba(255,140,0,0.22)",
                     }}
                   >
-                    <s.icon className="h-4.5 w-4.5" strokeWidth={1.5} style={{ height: "18px", width: "18px" }} />
+                    <s.icon style={{ height: "15px", width: "15px" }} strokeWidth={1.6} />
                   </div>
-                  <h3 className="font-semibold text-sm mb-1.5 leading-tight text-gray-800" style={{ fontFamily: "var(--app-font-serif)" }}>
-                    {s.title}
-                  </h3>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    {s.desc}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-800 leading-tight truncate" style={{ fontFamily: "var(--app-font-serif)" }}>
+                      {s.title}
+                    </p>
+                    <p className="text-[11px] text-gray-400 leading-snug mt-0.5 line-clamp-2">
+                      {s.desc}
+                    </p>
+                  </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════
-          STATS BAR — light version
-      ══════════════════════════════════ */}
-      <section style={{ background: BG_ALT, paddingTop: "4rem", paddingBottom: "4rem", position: "relative", overflow: "hidden" }}>
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,137,123,0.06), transparent)" }} />
-        <div className="container mx-auto px-4 relative">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeUp}
-                className="text-center"
-              >
-                <div
-                  className="h-10 w-10 rounded-xl flex items-center justify-center mx-auto mb-3 text-white"
-                  style={{ background: i % 2 === 0 ? "linear-gradient(135deg, #00695C, #26A69A)" : "linear-gradient(135deg, #E65100, #FFA726)" }}
-                >
-                  <s.icon className="h-5 w-5" strokeWidth={1.5} />
-                </div>
-                <p className="text-4xl font-bold text-gray-800 mb-1" style={{ fontFamily: "var(--app-font-serif)" }}>{s.value}</p>
-                <p className="text-sm text-gray-400" style={{ fontFamily: "var(--app-font-mono)" }}>{s.label}</p>
               </motion.div>
             ))}
           </div>
