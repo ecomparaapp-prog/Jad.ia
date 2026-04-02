@@ -16,13 +16,13 @@ const BG_ALT = "#ECEEF2";
 const BORDER = "rgba(0,0,0,0.07)";
 
 const services = [
-  { icon: Bot, title: "Vibe Coding IA", desc: "Descreva em português e a IA gera código em tempo real via streaming.", accent: "primary" },
-  { icon: Code2, title: "Editor Inteligente", desc: "Syntax highlighting, autocomplete e sugestões contextuais da IA.", accent: "secondary" },
-  { icon: Globe, title: "Sites & Web Apps", desc: "React, Vue, Next.js, HTML/CSS com pré-visualização ao vivo.", accent: "primary" },
-  { icon: Smartphone, title: "Apps Mobile", desc: "React Native com suporte completo de IA para desenvolvimento mobile.", accent: "secondary" },
-  { icon: Layers, title: "Analisador de Stack", desc: "IA recomenda automaticamente a melhor stack para seu projeto.", accent: "primary" },
-  { icon: Terminal, title: "Geração de Código", desc: "Comandos rápidos para setup, fix e refactor de qualquer projeto.", accent: "secondary" },
-  { icon: Shield, title: "Gerenciador de Secrets", desc: "Armazene variáveis de ambiente e API keys com total segurança.", accent: "primary" },
+  { icon: Bot, title: "Vibe Coding IA", desc: "Descreva em português e a IA gera código em tempo real.", accent: "primary" },
+  { icon: Globe, title: "Sites & Web Apps", desc: "React, Vue, Next.js e HTML/CSS com preview ao vivo.", accent: "primary" },
+  { icon: Layers, title: "Analisador de Stack", desc: "IA recomenda a melhor stack para o seu projeto.", accent: "primary" },
+  { icon: Shield, title: "Gerenciador de Secrets", desc: "Variáveis de ambiente e API keys com total segurança.", accent: "primary" },
+  { icon: Code2, title: "Editor Inteligente", desc: "Syntax highlighting, autocomplete e sugestões da IA.", accent: "secondary" },
+  { icon: Smartphone, title: "Apps Mobile", desc: "React Native com suporte completo de IA para mobile.", accent: "secondary" },
+  { icon: Terminal, title: "Geração de Código", desc: "Setup, fix e refactor de qualquer projeto em segundos.", accent: "secondary" },
   { icon: GitBranch, title: "Controle de Versão", desc: "Integração com GitHub para versionamento e colaboração.", accent: "secondary" },
 ];
 
@@ -273,61 +273,70 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          SERVICES — compact 4×2 grid
+          SERVICES — 4×2 grid, row 1 verde / row 2 laranja
       ══════════════════════════════════ */}
-      <section style={{ background: BG_ALT, paddingTop: "3rem", paddingBottom: "3rem" }}>
+      <section style={{ background: BG_ALT, paddingTop: "2.5rem", paddingBottom: "2.5rem" }}>
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {services.map((s, i) => (
-              <motion.div
-                key={s.title}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeUp}
-                whileHover={{ y: -3, scale: 1.015 }}
-                transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              >
-                <div
-                  className="flex items-center gap-3 px-4 py-3"
-                  style={{
-                    borderRadius: "1rem",
-                    background: "rgba(255,255,255,0.88)",
-                    border: `1px solid ${BORDER}`,
-                    boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
-                    transition: "border-color 0.18s, box-shadow 0.18s",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = s.accent === "primary" ? "rgba(0,137,123,0.28)" : "rgba(255,107,53,0.28)";
-                    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.07)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = BORDER;
-                    e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.04)";
-                  }}
+            {services.map((s, i) => {
+              const isGreen = s.accent === "primary";
+              const accentColor = isGreen ? "#00897B" : "#E65100";
+              const accentBg   = isGreen
+                ? "linear-gradient(135deg, #00695C 0%, #26A69A 100%)"
+                : "linear-gradient(135deg, #E65100 0%, #FFA726 100%)";
+              const accentHover = isGreen ? "rgba(0,137,123,0.22)" : "rgba(255,107,53,0.22)";
+              const subtleBg    = isGreen ? "rgba(0,137,123,0.04)" : "rgba(230,81,0,0.04)";
+
+              return (
+                <motion.div
+                  key={s.title}
+                  custom={i}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={fadeUp}
+                  whileHover={{ y: -4 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                  style={{ height: "100%" }}
                 >
                   <div
-                    className="h-8 w-8 rounded-xl flex-shrink-0 flex items-center justify-center text-white"
+                    className="flex flex-col gap-3 p-4 h-full"
                     style={{
-                      background: s.accent === "primary"
-                        ? "linear-gradient(135deg, #00695C 0%, #26A69A 100%)"
-                        : "linear-gradient(135deg, #E65100 0%, #FFA726 100%)",
+                      borderRadius: "1.1rem",
+                      background: `rgba(255,255,255,0.92)`,
+                      border: `1px solid ${BORDER}`,
+                      borderLeft: `3px solid ${accentColor}`,
+                      boxShadow: "0 1px 8px rgba(0,0,0,0.04)",
+                      transition: "box-shadow 0.18s, background 0.18s",
+                      minHeight: "110px",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = subtleBg;
+                      e.currentTarget.style.boxShadow = `0 6px 24px ${accentHover}`;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.92)";
+                      e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.04)";
                     }}
                   >
-                    <s.icon style={{ height: "15px", width: "15px" }} strokeWidth={1.6} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 leading-tight truncate" style={{ fontFamily: "var(--app-font-serif)" }}>
-                      {s.title}
-                    </p>
-                    <p className="text-[11px] text-gray-400 leading-snug mt-0.5 line-clamp-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center text-white"
+                        style={{ background: accentBg, boxShadow: `0 3px 10px ${accentHover}` }}
+                      >
+                        <s.icon style={{ height: "16px", width: "16px" }} strokeWidth={1.6} />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800 leading-tight" style={{ fontFamily: "var(--app-font-serif)" }}>
+                        {s.title}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed" style={{ fontFamily: "var(--app-font-sans)" }}>
                       {s.desc}
                     </p>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -344,9 +353,6 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <p className="text-xs uppercase tracking-widest mb-3 text-emerald-600" style={{ fontFamily: "var(--app-font-mono)" }}>
-                Como funciona
-              </p>
               <h2 className="text-4xl font-bold mb-5 leading-tight text-gray-900" style={{ fontFamily: "var(--app-font-serif)" }}>
                 IA que entende<br />código de verdade
               </h2>
