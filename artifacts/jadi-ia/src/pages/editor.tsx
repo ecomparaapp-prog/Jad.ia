@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,7 @@ export default function Editor() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { token } = useAuth();
 
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
@@ -103,6 +105,7 @@ export default function Editor() {
   const [vibeMode, setVibeMode] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFileContentsRef = useRef<Record<string, string>>({});
@@ -190,6 +193,7 @@ export default function Editor() {
           queryClient.invalidateQueries({ queryKey: getGetProjectFileQueryKey(projectId, selectedFileId) });
         }
         setIsSaving(false);
+        setPreviewRevision((r) => r + 1);
         toast({ title: "Arquivo salvo" });
       },
       onError: () => {
@@ -328,6 +332,7 @@ export default function Editor() {
         });
       }
 
+      setPreviewRevision((r) => r + 1);
       if (!showPreview) setShowPreview(true);
     },
     [files, projectId, showPreview],
@@ -345,11 +350,6 @@ export default function Editor() {
   const effectiveLangLabel = isAutoMode
     ? stackDecision?.framework ?? "Automático"
     : project?.language ?? "";
-
-  const projectFilesForPreview = (files ?? []).map((f) => ({
-    name: f.name,
-    content: f.id === selectedFileId ? editingContent : "",
-  }));
 
   if (loadingProject) {
     return (
@@ -672,8 +672,8 @@ export default function Editor() {
           )}
         </AnimatePresence>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className={`${showPreview ? "flex-1" : "flex-1"} flex overflow-hidden font-mono text-sm`} style={{ minHeight: 0 }}>
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden font-mono text-sm" style={{ minHeight: 0 }}>
             {selectedFileId && currentFile ? (
               <>
                 <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
@@ -718,12 +718,16 @@ export default function Editor() {
             )}
           </div>
 
-          {showPreview && currentFile && (
-            <div className="border-t border-border flex-shrink-0" style={{ height: "40%" }}>
+          {showPreview && (
+            <div
+              className="border-l border-border flex-shrink-0 overflow-hidden"
+              style={{ width: "45%" }}
+            >
               <PreviewPanel
-                content={editingContent}
-                filename={currentFile.name}
-                projectFiles={projectFilesForPreview}
+                projectId={projectId}
+                token={token}
+                revisionId={previewRevision}
+                currentFileName={currentFile?.name}
               />
             </div>
           )}

@@ -1,160 +1,237 @@
-import { useRef, useState, useEffect } from "react";
-import { Eye, Code2, RefreshCw, Globe, FileCode } from "lucide-react";
-
-interface ProjectFile {
-  name: string;
-  content: string;
-}
+import { useRef, useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  RefreshCw,
+  Globe,
+  AlertTriangle,
+  FileCode,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 
 interface PreviewPanelProps {
-  content: string;
-  filename: string;
-  projectFiles?: ProjectFile[];
+  projectId: number;
+  token: string | null;
+  revisionId: number;
+  currentFileName?: string;
 }
 
-function buildSrcDoc(filename: string, content: string, projectFiles: ProjectFile[]): string {
-  if (!filename.endsWith(".html") && !filename.endsWith(".htm")) return "";
+type PreviewStatus = "loading" | "live" | "error" | "no-html" | "no-project";
 
-  let html = content;
-
-  const cssFiles = projectFiles.filter((f) => f.name.endsWith(".css") && f.name !== filename);
-  const jsFiles = projectFiles.filter(
-    (f) => f.name.endsWith(".js") && !f.name.endsWith(".min.js") && f.name !== filename,
-  );
-
-  const cssBlock = cssFiles
-    .map((f) => `<style>/* ${f.name} */\n${f.content}\n</style>`)
-    .join("\n");
-
-  const jsBlock = jsFiles
-    .map((f) => `<script>/* ${f.name} */\n${f.content}\n</script>`)
-    .join("\n");
-
-  if (html.includes("</head>")) {
-    html = html.replace("</head>", `${cssBlock}\n</head>`);
-  } else {
-    html = cssBlock + "\n" + html;
-  }
-
-  if (html.includes("</body>")) {
-    html = html.replace("</body>", `${jsBlock}\n</body>`);
-  } else {
-    html = html + "\n" + jsBlock;
-  }
-
-  return html;
+function buildPreviewUrl(projectId: number, token: string, revision: number): string {
+  return `/api/projects/${projectId}/preview?token=${encodeURIComponent(token)}&t=${revision}`;
 }
 
-function getLanguageLabel(filename: string): string {
-  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-  const map: Record<string, string> = {
-    html: "HTML",
-    htm: "HTML",
-    css: "CSS",
-    js: "JavaScript",
-    ts: "TypeScript",
-    jsx: "JSX",
-    tsx: "TSX",
-    py: "Python",
-    json: "JSON",
-    md: "Markdown",
-    sql: "SQL",
-  };
-  return map[ext] ?? ext.toUpperCase();
-}
-
-export default function PreviewPanel({ content, filename, projectFiles = [] }: PreviewPanelProps) {
+export default function PreviewPanel({
+  projectId,
+  token,
+  revisionId,
+  currentFileName,
+}: PreviewPanelProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [mode, setMode] = useState<"preview" | "code">("preview");
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const isHtml = filename.endsWith(".html") || filename.endsWith(".htm");
+  const [status, setStatus] = useState<PreviewStatus>("loading");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [localRevision, setLocalRevision] = useState(revisionId);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    if (isHtml && mode === "preview") {
-      setReloadKey((k) => k + 1);
+    if (revisionId !== localRevision) {
+      setLocalRevision(revisionId);
+      setStatus("loading");
+      setIsRefreshing(true);
     }
-  }, [content, projectFiles]);
+  }, [revisionId]);
 
-  const srcDoc = isHtml ? buildSrcDoc(filename, content, projectFiles) : "";
-  const langLabel = getLanguageLabel(filename);
+  const handleLoad = useCallback(() => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc && doc.body) {
+        const bodyText = doc.body.innerText?.trim() ?? "";
+        if (
+          doc.title === "" &&
+          bodyText.startsWith("Token")
+        ) {
+          setStatus("error");
+          setErrorMsg("Token inválido — faça login novamente.");
+        } else {
+          setStatus("live");
+          setErrorMsg(null);
+        }
+      } else {
+        setStatus("live");
+        setErrorMsg(null);
+      }
+    } catch {
+      setStatus("live");
+      setErrorMsg(null);
+    }
+    setIsRefreshing(false);
+  }, []);
+
+  const handleError = useCallback(() => {
+    setStatus("error");
+    setErrorMsg("Não foi possível carregar o preview.");
+    setIsRefreshing(false);
+  }, []);
+
+  function handleRefresh() {
+    setStatus("loading");
+    setIsRefreshing(true);
+    setLocalRevision((r) => r + 1);
+  }
+
+  const previewUrl =
+    token && projectId
+      ? buildPreviewUrl(projectId, token, localRevision)
+      : null;
+
+  const StatusDot = () => {
+    if (status === "loading") {
+      return (
+        <span className="flex items-center gap-1.5 text-[11px] font-mono text-yellow-400/80">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Carregando...
+        </span>
+      );
+    }
+    if (status === "live") {
+      return (
+        <span className="flex items-center gap-1.5 text-[11px] font-mono text-teal-400">
+          <span className="h-2 w-2 rounded-full bg-teal-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+          Preview ativo
+        </span>
+      );
+    }
+    if (status === "error") {
+      return (
+        <span className="flex items-center gap-1.5 text-[11px] font-mono text-red-400">
+          <span className="h-2 w-2 rounded-full bg-red-400" />
+          Erro de renderização
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+        Sem preview
+      </span>
+    );
+  };
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0a0f]">
+    <div className="flex flex-col h-full" style={{ background: "#090912" }}>
       <div
-        className="flex items-center justify-between px-3 h-8 border-b border-white/8 flex-shrink-0"
-        style={{ background: "rgba(255,255,255,0.03)" }}
+        className="flex items-center justify-between px-3 h-9 border-b flex-shrink-0"
+        style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)" }}
       >
-        <div className="flex items-center gap-2">
-          {isHtml && mode === "preview" ? (
-            <Globe className="h-3 w-3 text-teal-400" />
-          ) : (
-            <FileCode className="h-3 w-3 text-muted-foreground" />
-          )}
-          <span className="text-[11px] text-muted-foreground font-mono">
-            {isHtml && mode === "preview" ? "Preview ao vivo" : langLabel} · {filename}
-          </span>
+        <div className="flex items-center gap-2.5">
+          <Globe className="h-3.5 w-3.5 text-teal-400/70 flex-shrink-0" />
+          <StatusDot />
         </div>
 
         <div className="flex items-center gap-1">
-          {isHtml && (
-            <>
-              <button
-                onClick={() => setMode("preview")}
-                className={`h-5 px-2 text-[10px] rounded-md font-mono transition-colors flex items-center gap-1 ${
-                  mode === "preview"
-                    ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Eye className="h-2.5 w-2.5" />
-                Preview
-              </button>
-              <button
-                onClick={() => setMode("code")}
-                className={`h-5 px-2 text-[10px] rounded-md font-mono transition-colors flex items-center gap-1 ${
-                  mode === "code"
-                    ? "bg-primary/20 text-primary border border-primary/30"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Code2 className="h-2.5 w-2.5" />
-                Código
-              </button>
-            </>
+          {previewUrl && (
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+              title="Abrir em nova aba"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           )}
           <button
-            onClick={() => setReloadKey((k) => k + 1)}
-            className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-            title="Recarregar"
+            onClick={handleRefresh}
+            className={`h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors ${isRefreshing ? "text-teal-400" : ""}`}
+            title="Recarregar preview"
           >
-            <RefreshCw className="h-3 w-3" />
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        {isHtml && mode === "preview" ? (
-          srcDoc ? (
-            <iframe
-              key={reloadKey}
-              ref={iframeRef}
-              srcDoc={srcDoc}
-              className="w-full h-full border-0 bg-white"
-              sandbox="allow-scripts allow-same-origin allow-forms"
-              title="Preview do projeto"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-xs text-muted-foreground font-mono">
-              Sem conteúdo para exibir
-            </div>
-          )
+      <div className="flex-1 overflow-hidden relative">
+        {!token ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground px-6 text-center">
+            <AlertTriangle className="h-8 w-8 text-yellow-400/50" />
+            <p className="text-xs">Faça login para ver o preview.</p>
+          </div>
         ) : (
-          <pre className="p-3 text-[11px] font-mono leading-relaxed text-foreground/75 overflow-auto h-full whitespace-pre-wrap break-words">
-            {content || <span className="text-muted-foreground/40 italic">Arquivo vazio</span>}
-          </pre>
+          <>
+            {status === "error" && (
+              <AnimatePresence>
+                <motion.div
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-6 text-center"
+                  style={{ background: "#090912" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground/80 mb-1">
+                      Erro ao renderizar preview
+                    </p>
+                    {errorMsg && (
+                      <p className="text-xs text-muted-foreground max-w-xs">{errorMsg}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleRefresh}
+                    className="flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-300 transition-colors border border-teal-400/30 hover:border-teal-400/60 px-3 py-1.5 rounded-md"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Tentar novamente
+                  </button>
+                </motion.div>
+              </AnimatePresence>
+            )}
+
+            {status === "loading" && (
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center"
+                style={{ background: "#090912" }}
+              >
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <div className="relative">
+                    <div className="h-8 w-8 rounded-full border-2 border-teal-500/20 border-t-teal-400 animate-spin" />
+                  </div>
+                  <p className="text-xs font-mono">Renderizando...</p>
+                </div>
+              </div>
+            )}
+
+            {previewUrl && (
+              <iframe
+                key={`preview-${localRevision}`}
+                ref={iframeRef}
+                src={previewUrl}
+                className="w-full h-full border-0 bg-white"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                title="Preview do projeto"
+                onLoad={handleLoad}
+                onError={handleError}
+                style={{ display: status === "error" ? "none" : "block" }}
+              />
+            )}
+          </>
         )}
       </div>
+
+      {currentFileName && (
+        <div
+          className="flex items-center gap-1.5 px-3 h-6 flex-shrink-0"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.015)" }}
+        >
+          <FileCode className="h-2.5 w-2.5 text-muted-foreground/50" />
+          <span className="text-[10px] font-mono text-muted-foreground/50 truncate">
+            {currentFileName}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
