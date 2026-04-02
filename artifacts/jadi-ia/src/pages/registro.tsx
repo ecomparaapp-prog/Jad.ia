@@ -92,7 +92,7 @@ export default function Registro() {
               <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--app-font-serif)' }}>Jadi.ia</h2>
               <div className="flex items-center gap-1.5 mt-1">
                 <Sparkles className="h-3.5 w-3.5" style={{ color: '#FF8C00' }} strokeWidth={1.5} />
-                <span className="text-xs text-muted-foreground">Powered by Groq AI</span>
+                <span className="text-xs text-muted-foreground">Powered by jadi.ia</span>
               </div>
             </div>
           </motion.div>

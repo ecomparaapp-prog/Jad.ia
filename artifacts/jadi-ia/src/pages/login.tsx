@@ -95,8 +95,8 @@ export default function Login() {
           </p>
 
           <div className="mt-8 flex items-center justify-center gap-2">
-            <Sparkles className="h-4 w-4" style={{ color: '#FF8C00' }} strokeWidth={1.5} />
-            <span className="text-sm font-medium text-muted-foreground">Powered by Groq AI</span>
+            <Sparkles className="h-4 w-4" style={{ color: '#00C4A7' }} strokeWidth={1.5} />
+            <span className="text-sm font-medium text-muted-foreground">Powered by jadi.ia</span>
           </div>
         </motion.div>
       </div>

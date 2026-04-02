@@ -1,0 +1,37 @@
+Prompt para o Replit Agent: Landing Page jadi.ia
+Role: Atue como Engenheiro de Creative Front-end e Especialista em WebGL/Three.js.
+Contexto: Estamos construindo a Home Page da jadi.ia. Use image_11.png como o modelo 3D absoluto para o elemento central e layout.
+
+1. O Elemento Central: Hero 3D Neural Surreal
+O Objeto: Implemente o busto complexo e surreal de image_11.png, exatamente como mostrado: a metade de pedra porosa e a metade de mosaico geométrico colorido, com as orbes esféricas, óculos orgânicos, respingos de tinta, e o feixe de laser neon multicolorido saindo do olho, flutuando no centro do Hero.
+
+Tecnologia: Utilize react-three-fiber e three.js para renderizar o modelo complexo.
+
+Efeito Visual: O feixe de laser neon multicolorido deve pulsar e brilhar intensamente. As esferas coloridas e os polígonos devem ter pulsação de luz interna. Manter o contraste tátil entre a pedra e os elementos coloridos.
+
+Interatividade: A cabeça deve ter um leve efeito de rotação automática e responder sutilmente ao movimento do mouse do usuário (parallax ou orbit).
+
+Cores: O laser é multicolorido neon, as orbes e mosaicos usam uma ampla paleta (laranja, magenta, verde, etc.), gerando contraste vibrante.
+
+2. Layout e UI/UX (Baseado na Complexidade)
+Cards de Serviço: * Tamanho: Crie cards pequenos e modulares. NÃO use cards largos que ocupem a tela inteira.
+
+Disposição: Organize-os em um grid responsivo (3 ou 4 por linha no desktop), encaixando-se lado a lado.
+
+Estilo: Aplique o "Glassmorphism" (vidro translúcido) com backdrop-filter: blur(20px) e bordas finas e brilhantes, talvez com uma textura tátil sutil.
+
+Remoção de Legado: Remova qualquer menção ou integração com "Groq" do sistema atual.
+
+3. Identidade Visual Estrita (jadi.ia)
+Sem Emojis: Use estritamente ícones lineares da biblioteca lucide-react.
+
+Logos de Tecnologia: Para qualquer seção de "integrações" ou "linguagens", use os logos oficiais em SVG (via Simple Icons).
+
+Tipografia: * Headlines: Fonte Serifada elegante (ex: Playfair Display).
+
+Corpo/UI: Sans-serif geométrica (ex: Plus Jakarta Sans).
+
+Paleta: Fundo escuro profundo ou off-white premium (dependendo da seção). Acentos: Multicolor Neon (do laser), Forest Green, Sunset Orange.
+
+4. Animações
+Use framer-motion para animações de entrada (fade-in e slide-up) nos cards e textos à medida que o usuário faz o scroll.
