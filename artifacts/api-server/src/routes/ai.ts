@@ -6,10 +6,124 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const GEMINI_MODEL = "gemini-2.5-flash";
+
+type OpenAIMessage = { role: string; content: string | unknown[] };
+
+function toGeminiContents(messages: OpenAIMessage[]): {
+  systemInstruction?: { parts: { text: string }[] };
+  contents: { role: string; parts: { text: string }[] }[];
+} {
+  let systemInstruction: { parts: { text: string }[] } | undefined;
+  const contents: { role: string; parts: { text: string }[] }[] = [];
+
+  for (const msg of messages) {
+    const text = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+    if (msg.role === "system") {
+      systemInstruction = { parts: [{ text }] };
+    } else {
+      contents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text }],
+      });
+    }
+  }
+  return { systemInstruction, contents };
+}
+
+async function callGeminiText(messages: OpenAIMessage[]): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+
+  const { systemInstruction, contents } = toGeminiContents(messages);
+
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+  };
+  if (systemInstruction) body.system_instruction = systemInstruction;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json() as {
+    candidates?: Array<{ content: { parts: Array<{ text: string }> } }>;
+  };
+  return data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ?? "";
+}
+
+async function streamGemini(
+  messages: OpenAIMessage[],
+  onToken: (token: string) => void,
+): Promise<void> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+
+  const { systemInstruction, contents } = toGeminiContents(messages);
+
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+  };
+  if (systemInstruction) body.system_instruction = systemInstruction;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw Object.assign(new Error(`Gemini API error: ${err}`), { status: res.status });
+  }
+
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+      const payload = trimmed.slice(6).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(payload) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) onToken(text);
+      } catch {
+        // skip malformed chunk
+      }
+    }
+  }
+}
 
 async function callGroq(
-  messages: { role: string; content: string | unknown[] }[],
+  messages: OpenAIMessage[],
   model = "llama-3.3-70b-versatile",
   stream = false,
 ): Promise<Response> {
@@ -32,82 +146,21 @@ async function callGroq(
   });
 }
 
-async function callGemini(
-  messages: { role: string; content: string | unknown[] }[],
-  model = "gemini-1.5-flash",
-  stream = false,
-): Promise<Response> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-
-  return fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: stream ? 8192 : 4096,
-      stream,
-    }),
-  });
-}
-
-async function callGroqText(messages: { role: string; content: string }[], model = "llama-3.3-70b-versatile"): Promise<string> {
+async function callGroqText(messages: OpenAIMessage[], model = "llama-3.3-70b-versatile"): Promise<string> {
   const res = await callGroq(messages, model, false);
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Groq API error: ${err}`);
+    throw Object.assign(new Error(`Groq API error: ${err}`), { status: res.status });
   }
   const data = await res.json() as { choices: Array<{ message: { content: string } }> };
   return data.choices[0]?.message?.content ?? "";
-}
-
-async function callGeminiText(messages: { role: string; content: string }[], model = "gemini-1.5-flash"): Promise<string> {
-  const res = await callGemini(messages, model, false);
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Gemini API error: ${err}`);
-  }
-  const data = await res.json() as { choices: Array<{ message: { content: string } }> };
-  return data.choices[0]?.message?.content ?? "";
-}
-
-async function dispatchTask(
-  taskType: "analise" | "construcao",
-  messages: { role: string; content: string }[],
-): Promise<{ text: string; provider: string }> {
-  if (taskType === "analise") {
-    const text = await callGeminiText(messages, "gemini-1.5-flash");
-    return { text, provider: "gemini" };
-  }
-
-  try {
-    const text = await callGroqText(messages, "llama-3.3-70b-versatile");
-    return { text, provider: "groq" };
-  } catch (err: unknown) {
-    const errMsg = (err as Error).message ?? "";
-    const isRateLimit = errMsg.includes("429") || errMsg.toLowerCase().includes("rate limit") || errMsg.toLowerCase().includes("too many");
-    if (isRateLimit) {
-      logger.warn("Alternando provedor por estabilidade...");
-      try {
-        const text = await callGeminiText(messages, "gemini-1.5-flash");
-        return { text, provider: "gemini-fallback" };
-      } catch {
-        throw new Error("Todos os provedores falharam. Tente novamente em breve.");
-      }
-    }
-    throw err;
-  }
 }
 
 function extractCodeBlocks(text: string): string[] {
   const regex = /```(?:\w+)?\n([\s\S]*?)```/g;
   const blocks: string[] = [];
   let match;
-  while ((match = regex.exec(text)) !== null) {
-    blocks.push(match[1].trim());
-  }
+  while ((match = regex.exec(text)) !== null) blocks.push(match[1].trim());
   return blocks;
 }
 
@@ -132,8 +185,7 @@ Seja concisa, direta e técnica. Explique apenas o necessário.`;
   const systemMessage = { role: "system", content: systemContent };
 
   try {
-    const groqMessages = [systemMessage, ...messages] as { role: string; content: string }[];
-    const responseText = await callGroqText(groqMessages);
+    const responseText = await callGroqText([systemMessage, ...messages]);
     const codeBlocks = extractCodeBlocks(responseText);
     res.json({ message: responseText, codeBlocks });
   } catch (error) {
@@ -151,17 +203,17 @@ router.post("/ai/generate-prompt", requireAuth, async (req, res): Promise<void> 
 
   const { description, projectType, language } = parsed.data;
 
-  const systemMessage = {
-    role: "system",
-    content: `Você é um agente técnico especializado em gerar prompts otimizados para desenvolvimento de software.
+  const messages: OpenAIMessage[] = [
+    {
+      role: "system",
+      content: `Você é um agente técnico especializado em gerar prompts otimizados para desenvolvimento de software.
 Seu objetivo é transformar descrições simples em prompts técnicos detalhados para guiar a criação de sistemas.
 Responda sempre em português do Brasil.
 Formate a resposta como JSON com campos "prompt" (string) e "suggestions" (array de strings com sugestões adicionais).`,
-  };
-
-  const userMessage = {
-    role: "user",
-    content: `Gere um prompt técnico detalhado para o seguinte projeto:
+    },
+    {
+      role: "user",
+      content: `Gere um prompt técnico detalhado para o seguinte projeto:
 Descrição: ${description}
 Tipo de projeto: ${projectType}
 ${language ? `Linguagem/Framework: ${language}` : ""}
@@ -174,23 +226,18 @@ O prompt deve incluir:
 5. Considerações de segurança e performance
 
 Responda em formato JSON: { "prompt": "...", "suggestions": ["...", "..."] }`,
-  };
+    },
+  ];
 
   try {
-    const responseText = await callGroqText([systemMessage, userMessage]);
-
+    const responseText = await callGroqText(messages);
     let promptData: { prompt: string; suggestions: string[] };
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        promptData = JSON.parse(jsonMatch[0]);
-      } else {
-        promptData = { prompt: responseText, suggestions: [] };
-      }
+      promptData = jsonMatch ? JSON.parse(jsonMatch[0]) : { prompt: responseText, suggestions: [] };
     } catch {
       promptData = { prompt: responseText, suggestions: [] };
     }
-
     res.json(promptData);
   } catch (error) {
     logger.error({ error }, "Erro ao gerar prompt");
@@ -207,17 +254,17 @@ router.post("/ai/analyze-stack", requireAuth, async (req, res): Promise<void> =>
 
   const { projectName, description, projectType } = parsed.data;
 
-  const systemMessage = {
-    role: "system",
-    content: `Você é o SISTEMA ANALISTA do Jadi.ia, especializado em arquitetura de software e seleção de tecnologias.
+  const messages: OpenAIMessage[] = [
+    {
+      role: "system",
+      content: `Você é o SISTEMA ANALISTA do Jadi.ia, especializado em arquitetura de software e seleção de tecnologias.
 Sua missão é analisar a descrição de um projeto e recomendar a stack tecnológica ideal.
 Utilize raciocínio técnico preciso. Responda SEMPRE em formato JSON válido, sem texto extra antes ou depois.
 Use linguagem técnica clara e objetiva. Responda em português do Brasil.`,
-  };
-
-  const userMessage = {
-    role: "user",
-    content: `Analise o projeto abaixo e recomende a melhor stack tecnológica:
+    },
+    {
+      role: "user",
+      content: `Analise o projeto abaixo e recomende a melhor stack tecnológica:
 
 Nome do projeto: ${projectName}
 Descrição: ${description}
@@ -231,10 +278,11 @@ Responda com um JSON no seguinte formato:
   "justification": "Justificativa técnica de 1-2 frases explicando por que essa stack é ideal para este projeto",
   "systemPrompt": "Instrução técnica completa para guiar a IA na geração de código. Deve especificar linguagem, framework, padrões de código, estrutura de pastas e boas práticas. Seja detalhado e técnico."
 }`,
-  };
+    },
+  ];
 
   try {
-    const { text: responseText } = await dispatchTask("analise", [systemMessage, userMessage]);
+    const responseText = await callGeminiText(messages);
 
     let stackData: {
       language: string;
@@ -280,7 +328,7 @@ router.post("/ai/stream", requireAuth, async (req, res): Promise<void> => {
   };
 
   const { messages, projectContext, language, systemPrompt, taskType } = req.body as {
-    messages: Array<{ role: string; content: string | unknown[] }>;
+    messages: OpenAIMessage[];
     projectContext?: string;
     language?: string;
     systemPrompt?: string;
@@ -308,35 +356,59 @@ ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
 ${language && language !== "auto" ? `Linguagem principal: ${language}` : ""}`
     : `Você é o SISTEMA CONSTRUTOR do Jadi.ia. Executor especializado em geração de código limpo, funcional e bem estruturado.
 Você transforma planos em código real. Priorize código funcional e completo acima de tudo.
-Use fontes monoespaçadas para código. Sempre use blocos de código com linguagem especificada (ex: \`\`\`javascript).
+Sempre use blocos de código com linguagem especificada (ex: \`\`\`javascript).
 Responda sempre em português do Brasil.
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
 ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}` : ""}`;
 
   const systemContent = systemPrompt ? `${baseSystem}\n\n${systemPrompt}` : baseSystem;
-  const groqMessages = [{ role: "system", content: systemContent }, ...messages];
+  const fullMessages: OpenAIMessage[] = [{ role: "system", content: systemContent }, ...messages];
 
-  const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
-  const geminiModel = "gemini-1.5-flash";
-
-  const attemptStream = async (provider: "groq" | "gemini"): Promise<Response> => {
-    if (provider === "gemini") {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-      return callGemini(groqMessages, geminiModel, true);
-    }
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("GROQ_API_KEY não configurada");
-    return callGroq(groqMessages, groqModel, true);
-  };
-
-  const streamResponse = async (apiResponse: Response) => {
-    if (!apiResponse.ok) {
-      const errText = await apiResponse.text();
-      throw Object.assign(new Error(`API error: ${errText}`), { status: apiResponse.status });
+  try {
+    if (isAnalyst) {
+      await streamGemini(fullMessages, (token) => {
+        sendEvent("token", { token });
+      });
+      sendEvent("done", {});
+      res.end();
+      return;
     }
 
-    const reader = apiResponse.body!.getReader();
+    const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
+
+    let groqRes: Response;
+    try {
+      groqRes = await callGroq(fullMessages, groqModel, true);
+    } catch (err: unknown) {
+      const msg = (err as Error).message ?? "";
+      const isRateLimit = msg.includes("429") || msg.toLowerCase().includes("rate limit");
+      if (isRateLimit) {
+        logger.warn("Alternando provedor por estabilidade...");
+        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
+        await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
+        sendEvent("done", {});
+        res.end();
+        return;
+      }
+      throw err;
+    }
+
+    if (!groqRes.ok) {
+      if (groqRes.status === 429 || groqRes.status >= 500) {
+        logger.warn("Alternando provedor por estabilidade...");
+        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
+        await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
+        sendEvent("done", {});
+        res.end();
+        return;
+      }
+      const errText = await groqRes.text();
+      sendEvent("error", { message: `Groq API error: ${errText}` });
+      res.end();
+      return;
+    }
+
+    const reader = groqRes.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -371,32 +443,6 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
 
     sendEvent("done", {});
     res.end();
-  };
-
-  try {
-    const primaryProvider: "groq" | "gemini" = isAnalyst ? "gemini" : "groq";
-    let apiResponse: Response;
-
-    try {
-      apiResponse = await attemptStream(primaryProvider);
-      if (!apiResponse.ok && (apiResponse.status === 429 || apiResponse.status >= 500) && !isAnalyst) {
-        logger.warn("Alternando provedor por estabilidade...");
-        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
-        apiResponse = await attemptStream("gemini");
-      }
-    } catch (err: unknown) {
-      const errMsg = (err as Error).message ?? "";
-      const isRateLimit = errMsg.includes("429") || errMsg.toLowerCase().includes("rate limit");
-      if (isRateLimit && !isAnalyst) {
-        logger.warn("Alternando provedor por estabilidade...");
-        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
-        apiResponse = await attemptStream("gemini");
-      } else {
-        throw err;
-      }
-    }
-
-    await streamResponse(apiResponse);
   } catch (error) {
     logger.error({ error }, "Erro no streaming SSE");
     sendEvent("error", { message: "Erro ao processar streaming" });
