@@ -151,14 +151,14 @@ export default function Home() {
                 fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
               }}
             >
-              Sua IA de{" "}
+              Jad.ia{" "}
               <span style={{
                 background: "linear-gradient(135deg, #00C4A7 0%, #FF6B35 50%, #FF00CC 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}>
-                Vibe Coding.
+                Vibe coding
               </span>
             </motion.h1>
 
@@ -194,16 +194,14 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.04 }}
+                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(255,107,53,0.55)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/login")}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full text-white"
                 style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.8)",
-                  backdropFilter: "blur(20px)",
-                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
+                  background: "linear-gradient(135deg, #E65100 0%, #FF6B35 60%, #FF8C42 100%)",
+                  boxShadow: "0 0 28px rgba(255,107,53,0.40), inset 0 1px 0 rgba(255,255,255,0.18)",
+                  fontFamily: "var(--app-font-sans)",
                 }}
               >
                 Entrar na plataforma
