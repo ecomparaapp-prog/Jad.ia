@@ -10,6 +10,7 @@ import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
+import { KeyRound } from "lucide-react";
 import logoBranca from "@assets/logo_sem_fundo_branca_1775101885588.jpg";
 import logo from "@assets/logo_sem_fundo_1775101885589.png";
 
@@ -41,7 +42,7 @@ export default function Login() {
       onError: (error: { data?: { error?: string } }) => {
         toast({
           title: "Erro ao entrar",
-          description: error?.data?.error ?? "Verifique suas credenciais",
+          description: error?.data?.error ?? "Verifique suas credenciais e tente novamente.",
           variant: "destructive",
         });
       },
@@ -50,6 +51,11 @@ export default function Login() {
 
   function onSubmit(data: LoginForm) {
     loginMutation.mutate({ data });
+  }
+
+  function fillTestCredentials() {
+    form.setValue("email", "admin@jadi.ia");
+    form.setValue("password", "admin123");
   }
 
   return (
@@ -92,6 +98,24 @@ export default function Login() {
             </div>
           </div>
 
+          <div
+            className="mb-6 p-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+            onClick={fillTestCredentials}
+            data-testid="test-credentials-hint"
+            title="Clique para preencher automaticamente"
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <KeyRound className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="text-xs font-semibold text-primary">Conta de teste (clique para preencher)</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono">
+              Email: <span className="text-foreground">admin@jadi.ia</span>
+            </p>
+            <p className="text-xs text-muted-foreground font-mono">
+              Senha: <span className="text-foreground">admin123</span>
+            </p>
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -105,6 +129,7 @@ export default function Login() {
                         type="email"
                         placeholder="seu@email.com"
                         data-testid="input-email"
+                        autoComplete="email"
                         {...field}
                       />
                     </FormControl>
@@ -124,6 +149,7 @@ export default function Login() {
                         type="password"
                         placeholder="••••••••"
                         data-testid="input-password"
+                        autoComplete="current-password"
                         {...field}
                       />
                     </FormControl>

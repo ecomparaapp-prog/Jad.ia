@@ -59,13 +59,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
   if (!user) {
-    res.status(401).json({ error: "Email ou senha inválidos" });
+    res.status(401).json({ error: "Usuário não encontrado. Verifique o e-mail informado." });
     return;
   }
 
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) {
-    res.status(401).json({ error: "Email ou senha inválidos" });
+    res.status(401).json({ error: "Senha incorreta. Tente novamente." });
     return;
   }
 
