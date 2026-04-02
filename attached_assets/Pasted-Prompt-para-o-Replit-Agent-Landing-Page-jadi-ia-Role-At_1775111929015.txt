@@ -1,0 +1,56 @@
+Prompt para o Replit Agent: Landing Page jadi.ia
+Role: Atue como Engenheiro de Creative Front-end e Especialista em WebGL/Three.js.
+Contexto: Estamos construindo a Home Page da jadi.ia. Use as imagens de referência enviadas como guia visual absoluto para o layout e para o elemento central.
+
+1. O Elemento Central: Hero 3D Neural
+O Objeto: Implemente uma cabeça humana estilizada e abstrata no centro do Hero (use a imagem referencia ui:ux.jpeg como base).
+
+Tecnologia: Utilize react-three-fiber e three.js.
+
+Efeito Visual: A cabeça deve ser composta por uma malha geométrica (wireframe ou low-poly) e deve apresentar "estímulos elétricos" pulsando entre os nós. Use partículas ou linhas neon que percorrem a malha simulando disparos neuronais.
+
+Interatividade: A cabeça deve ter um leve efeito de rotação automática e responder sutilmente ao movimento do mouse do usuário (parallax ou orbit).
+
+Cores: Os estímulos devem brilhar nas cores da paleta (Forest Green e Sunset Orange), criando um contraste vibrante contra o fundo escuro/off-white da seção.
+
+2. Layout e UI/UX (Baseado na Imagem de Referência)
+Modernização: Siga a estrutura da imagem referencia ui:ux.jpeg. A página deve ser limpa, com muito respiro e tipografia de impacto.
+
+Cards de Serviço: * Tamanho: Crie cards pequenos e modulares. NÃO use cards largos que ocupem a tela inteira.
+
+Disposição: Organize-os em um grid responsivo (3 ou 4 por linha no desktop), encaixando-se lado a lado.
+
+Estilo: Aplique o "Glassmorphism" (vidro translúcido) com backdrop-filter: blur(20px) e bordas finas e brilhantes.
+
+Remoção de Legado: Remova qualquer menção ou integração com "Groq" do sistema atual.
+
+3. Identidade Visual Estrita (jadi.ia)
+Sem Emojis: Use estritamente ícones lineares da biblioteca lucide-react.
+
+Logos de Tecnologia: Para qualquer seção de "integrações" ou "linguagens", use os logos oficiais em SVG (via Simple Icons).
+
+Tipografia: * Headlines: Fonte Serifada elegante (ex: Playfair Display).
+
+Corpo/UI: Sans-serif geométrica (ex: Plus Jakarta Sans).
+
+Paleta: Fundo escuro profundo ou off-white premium (dependendo da seção), com os acentos em Forest Green e Sunset Orange.
+
+4. Animações
+Use framer-motion para animações de entrada (fade-in e slide-up) nos cards e textos à medida que o usuário faz o scroll.
+
+💡 Dicas Adicionais para você (Usuário):
+Imagens: Como o Replit Agent não consegue "gerar" o arquivo 3D (.obj ou .gltf) da cabeça do zero com perfeição artística, ele pode tentar criar uma versão procedural (usando código para gerar a forma). Se ele tiver dificuldade, peça: "Crie uma representação geométrica abstrata usando esferas e linhas conectadas que formem o contorno de uma cabeça humana".
+
+Performance: Elementos 3D podem pesar. Se a página ficar lenta, peça para ele "Otimizar o render loop do Three.js e reduzir a contagem de polígonos".
+
+Bibliotecas: Certifique-se de que ele instale estas dependências no package.json:
+
+three
+
+@react-three/fiber
+
+@react-three/drei
+
+framer-motion
+
+lucide-react
