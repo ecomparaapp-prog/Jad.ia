@@ -277,7 +277,7 @@ export default function Home() {
       ══════════════════════════════════ */}
       <section style={{ background: BG_ALT, paddingTop: "2.5rem", paddingBottom: "2.5rem" }}>
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {services.map((s, i) => {
               const isGreen = s.accent === "primary";
               const accentColor = isGreen ? "#00897B" : "#E65100";
@@ -359,18 +359,21 @@ export default function Home() {
               <p className="text-gray-400 leading-relaxed mb-8">
                 Converse em português para gerar componentes, resolver bugs, refatorar código e criar projetos completos — tudo em tempo real.
               </p>
-              <div className="space-y-4">
+              <div className="flex flex-col gap-5">
                 {[
                   { icon: Zap, text: "Geração de código em streaming" },
                   { icon: BarChart3, text: "Análise automática de stack" },
                   { icon: Code2, text: "Suporte a 8+ linguagens" },
                 ].map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-center gap-3">
+                  <div key={text} className="flex items-center gap-4">
                     <div
-                      className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
-                      style={{ background: "linear-gradient(135deg, #00695C, #26A69A)", boxShadow: "0 4px 12px rgba(38,166,154,0.22)" }}
+                      className="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #00695C, #26A69A)",
+                        boxShadow: "0 4px 14px rgba(38,166,154,0.25)",
+                      }}
                     >
-                      <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                      <Icon className="h-5 w-5" strokeWidth={1.8} />
                     </div>
                     <span className="text-sm font-medium text-gray-700">{text}</span>
                   </div>
