@@ -1,10 +1,10 @@
 import { useLocation } from "wouter";
 import {
-  Code2, Zap, Globe, Smartphone, Lock, GitBranch,
-  ArrowRight, Sparkles, Bot, Layers, Terminal, Shield,
+  Code2, Zap, Globe, Smartphone, GitBranch,
+  ArrowRight, Bot, Layers, Terminal, Shield,
   BarChart3, Users, FolderOpen, Clock
 } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { SurrealHead } from "@/components/SurrealHead";
 import {
   JSLogo, TSLogo, PythonLogo, ReactLogo,
@@ -66,123 +66,36 @@ export default function Home() {
       <section
         className="relative overflow-hidden"
         style={{
-          background: "linear-gradient(160deg, #030808 0%, #060f0d 40%, #08120e 100%)",
+          background: "linear-gradient(160deg, #050505 0%, #080808 50%, #0a0a0a 100%)",
           minHeight: "100vh",
         }}
       >
-        {/* Deep ambient orbs */}
+        {/* Ambient orbs — neutral dark palette */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-[-15%] left-[-10%] w-[55vw] h-[55vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(0,137,123,0.18) 0%, transparent 70%)", filter: "blur(100px)" }} />
+            style={{ background: "radial-gradient(circle, rgba(80,0,120,0.12) 0%, transparent 70%)", filter: "blur(100px)" }} />
           <div className="absolute bottom-[-10%] right-[-8%] w-[45vw] h-[45vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(255,100,0,0.14) 0%, transparent 70%)", filter: "blur(120px)" }} />
+            style={{ background: "radial-gradient(circle, rgba(180,60,0,0.10) 0%, transparent 70%)", filter: "blur(120px)" }} />
           <div className="absolute top-[25%] right-[5%] w-[30vw] h-[30vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(180,0,255,0.08) 0%, transparent 70%)", filter: "blur(80px)" }} />
-          <div className="absolute bottom-[20%] left-[5%] w-[20vw] h-[20vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(0,200,255,0.06) 0%, transparent 70%)", filter: "blur(60px)" }} />
+            style={{ background: "radial-gradient(circle, rgba(0,80,180,0.07) 0%, transparent 70%)", filter: "blur(80px)" }} />
         </div>
 
         <div className="container mx-auto px-4 py-16 relative">
           <div className="flex flex-col items-center text-center" style={{ minHeight: "90vh", justifyContent: "center" }}>
 
-            {/* Badge */}
+            {/* Surreal 3D Head — TOP */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full"
-              style={{
-                background: "rgba(0,137,123,0.12)",
-                border: "1px solid rgba(0,137,123,0.3)",
-              }}
-            >
-              <Sparkles className="h-3.5 w-3.5" style={{ color: "#26C6B0" }} strokeWidth={1.5} />
-              <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: "#26C6B0", fontFamily: "var(--app-font-mono)" }}>
-                Inteligência Artificial para Devs
-              </span>
-            </motion.div>
-
-            {/* Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-tight mb-4"
-              style={{ fontFamily: "var(--app-font-serif)", letterSpacing: "-0.02em" }}
-            >
-              Sua IA de{" "}
-              <br />
-              <span style={{
-                background: "linear-gradient(135deg, #00C4A7 0%, #FF6B35 50%, #FF00CC 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}>
-                Vibe Coding.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35 }}
-              className="text-gray-400 text-base md:text-lg max-w-xl mb-10 leading-relaxed"
-              style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}
-            >
-              Descreva o que quer construir em português. A jadi.ia gera código em tempo real, cria projetos completos e evolui junto com você.
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.45 }}
-              className="flex flex-col sm:flex-row gap-4 mb-14"
-            >
-              <motion.button
-                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(0,196,167,0.35)" }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setLocation("/registro")}
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold rounded-full text-white"
-                style={{
-                  background: "linear-gradient(135deg, #00897B 0%, #26C6B0 100%)",
-                  boxShadow: "0 0 30px rgba(0,137,123,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
-                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
-                }}
-              >
-                Começar agora
-                <ArrowRight className="h-4 w-4" strokeWidth={2} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setLocation("/login")}
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 text-base font-semibold rounded-full"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.8)",
-                  backdropFilter: "blur(20px)",
-                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
-                }}
-              >
-                Entrar na plataforma
-              </motion.button>
-            </motion.div>
-
-            {/* Surreal 3D Head — central hero element */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              initial={{ opacity: 0, scale: 0.8, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-lg mx-auto relative"
-              style={{ height: "480px" }}
+              transition={{ duration: 1.2, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-lg mx-auto relative mb-6"
+              style={{ height: "460px" }}
             >
               {/* Floating stat cards */}
               <motion.div
                 initial={{ opacity: 0, x: -40 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 1.0 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
                 className="absolute left-0 top-1/4 hidden lg:block"
                 style={{ zIndex: 10 }}
               >
@@ -206,7 +119,7 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 1.1 }}
+                transition={{ duration: 0.8, delay: 0.9 }}
                 className="absolute right-0 top-1/3 hidden lg:block"
                 style={{ zIndex: 10 }}
               >
@@ -224,6 +137,77 @@ export default function Home() {
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">Devs<br />Ativos</p>
                 </div>
               </motion.div>
+            </motion.div>
+
+            {/* Headline — single line */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="font-bold text-white leading-tight mb-4 whitespace-nowrap"
+              style={{
+                fontFamily: "var(--app-font-serif)",
+                letterSpacing: "-0.02em",
+                fontSize: "clamp(2rem, 5.5vw, 4.5rem)",
+              }}
+            >
+              Sua IA de{" "}
+              <span style={{
+                background: "linear-gradient(135deg, #00C4A7 0%, #FF6B35 50%, #FF00CC 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                Vibe Coding.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="text-gray-400 text-base md:text-lg max-w-xl mb-8 leading-relaxed"
+              style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}
+            >
+              Descreva o que quer construir em português. A jadi.ia gera código em tempo real, cria projetos completos e evolui junto com você.
+            </motion.p>
+
+            {/* CTA Buttons — side by side */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.5 }}
+              className="flex flex-row gap-4"
+            >
+              <motion.button
+                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(0,196,167,0.35)" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setLocation("/registro")}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full text-white"
+                style={{
+                  background: "linear-gradient(135deg, #00897B 0%, #26C6B0 100%)",
+                  boxShadow: "0 0 30px rgba(0,137,123,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
+                }}
+              >
+                Começar agora
+                <ArrowRight className="h-4 w-4" strokeWidth={2} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setLocation("/login")}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.8)",
+                  backdropFilter: "blur(20px)",
+                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
+                }}
+              >
+                Entrar na plataforma
+              </motion.button>
             </motion.div>
 
           </div>
