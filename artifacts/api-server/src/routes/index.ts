@@ -7,6 +7,7 @@ import secretsRouter from "./secrets";
 import aiRouter from "./ai";
 import statsRouter from "./stats";
 import previewRouter from "./preview";
+import assetsRouter from "./assets";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(secretsRouter);
 router.use(aiRouter);
 router.use(statsRouter);
 router.use(previewRouter);
+router.use(assetsRouter);
 
 export default router;

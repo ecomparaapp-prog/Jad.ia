@@ -7,6 +7,8 @@ const router: IRouter = Router();
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GEMINI_MODEL = "gemini-2.5-flash";
+const GROQ_CODER_MODEL = "qwen-2.5-coder-32b";
+const GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile";
 
 type OpenAIMessage = { role: string; content: string | unknown[] };
 
@@ -264,7 +266,7 @@ Use linguagem técnica clara e objetiva. Responda em português do Brasil.`,
     },
     {
       role: "user",
-      content: `Analise o projeto abaixo e recomende a melhor stack tecnológica:
+      content: `Analise o projeto abaixo e recomende a melhor stack tecnológica e identidade visual:
 
 Nome do projeto: ${projectName}
 Descrição: ${description}
@@ -276,7 +278,17 @@ Responda com um JSON no seguinte formato:
   "framework": "framework principal (ex: React, Django, Next.js, React Native)",
   "projectType": "tipo de projeto identificado (ex: E-commerce, App Mobile, API REST, Dashboard, Landing Page)",
   "justification": "Justificativa técnica de 1-2 frases explicando por que essa stack é ideal para este projeto",
-  "systemPrompt": "Instrução técnica completa para guiar a IA na geração de código. Deve especificar linguagem, framework, padrões de código, estrutura de pastas e boas práticas. Seja detalhado e técnico."
+  "systemPrompt": "Instrução técnica completa para guiar a IA na geração de código. Deve especificar linguagem, framework, padrões de código, estrutura de pastas e boas práticas. Seja detalhado e técnico.",
+  "fontMood": "um dos: modern, editorial, tech, elegant, bold, minimal, creative, corporate",
+  "colorPalette": {
+    "primary": "#hexcolor",
+    "secondary": "#hexcolor",
+    "accent": "#hexcolor",
+    "background": "#hexcolor",
+    "surface": "#hexcolor",
+    "text": "#hexcolor"
+  },
+  "imageQueries": ["query1 em inglês", "query2 em inglês"]
 }`,
     },
   ];
@@ -290,6 +302,9 @@ Responda com um JSON no seguinte formato:
       projectType: string;
       justification: string;
       systemPrompt: string;
+      fontMood?: string;
+      colorPalette?: Record<string, string>;
+      imageQueries?: string[];
     };
 
     try {
@@ -306,6 +321,9 @@ Responda com um JSON no seguinte formato:
         projectType: "Aplicação Web",
         justification: "Stack moderna e versátil ideal para desenvolvimento web.",
         systemPrompt: "Você é um especialista em desenvolvimento web com TypeScript e React. Gere código moderno, tipado e seguindo boas práticas.",
+        fontMood: "modern",
+        colorPalette: { primary: "#6366f1", secondary: "#8b5cf6", accent: "#06b6d4", background: "#0f172a", surface: "#1e293b", text: "#f8fafc" },
+        imageQueries: ["technology workspace", "modern web design"],
       };
     }
 
@@ -374,11 +392,15 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
       return;
     }
 
-    const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
+    const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_CODER_MODEL;
 
     let groqRes: Response;
     try {
       groqRes = await callGroq(fullMessages, groqModel, true);
+      if (!groqRes.ok && groqModel === GROQ_CODER_MODEL) {
+        logger.warn(`Qwen indisponível (${groqRes.status}), tentando fallback...`);
+        groqRes = await callGroq(fullMessages, GROQ_FALLBACK_MODEL, true);
+      }
     } catch (err: unknown) {
       const msg = (err as Error).message ?? "";
       const isRateLimit = msg.includes("429") || msg.toLowerCase().includes("rate limit");
