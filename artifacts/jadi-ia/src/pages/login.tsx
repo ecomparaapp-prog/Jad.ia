@@ -53,7 +53,7 @@ export default function Login() {
   }
 
   function fillTestCredentials() {
-    form.setValue("email", "admin@jadi.ia");
+    form.setValue("email", "admin@jad.ia");
     form.setValue("password", "admin123");
   }
 
@@ -80,7 +80,7 @@ export default function Login() {
           >
             <img
               src={theme === "dark" ? logoBranca : logo}
-              alt="Jadi.ia"
+              alt="Jad.ia"
               className="h-28 w-28 object-contain"
             />
           </motion.div>
@@ -88,7 +88,7 @@ export default function Login() {
             className="text-3xl font-bold mb-4"
             style={{ fontFamily: 'var(--app-font-serif)' }}
           >
-            Jadi.ia
+            Jad.ia
           </h2>
           <p className="text-muted-foreground leading-relaxed">
             Crie sites, sistemas e apps com suporte de IA em português. Descreva, e o código aparece em tempo real.
@@ -96,7 +96,7 @@ export default function Login() {
 
           <div className="mt-8 flex items-center justify-center gap-2">
             <Sparkles className="h-4 w-4" style={{ color: '#00C4A7' }} strokeWidth={1.5} />
-            <span className="text-sm font-medium text-muted-foreground">Powered by jadi.ia</span>
+            <span className="text-sm font-medium text-muted-foreground">Powered by jad.ia</span>
           </div>
         </motion.div>
       </div>
@@ -111,8 +111,8 @@ export default function Login() {
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <img src={theme === "dark" ? logoBranca : logo} alt="Jadi.ia" className="h-10 w-10 object-contain" />
-            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jadi.ia</span>
+            <img src={theme === "dark" ? logoBranca : logo} alt="Jad.ia" className="h-10 w-10 object-contain" />
+            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jad.ia</span>
           </div>
 
           <h1
@@ -121,7 +121,7 @@ export default function Login() {
           >
             Entrar
           </h1>
-          <p className="text-sm text-muted-foreground mb-8">Acesse sua conta no Jadi.ia</p>
+          <p className="text-sm text-muted-foreground mb-8">Acesse sua conta no Jad.ia</p>
 
           {/* Test credentials */}
           <div
@@ -137,7 +137,7 @@ export default function Login() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
-              Email: <span className="text-foreground font-medium">admin@jadi.ia</span>
+              Email: <span className="text-foreground font-medium">admin@jad.ia</span>
             </p>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
               Senha: <span className="text-foreground font-medium">admin123</span>

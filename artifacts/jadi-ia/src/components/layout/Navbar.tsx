@@ -33,7 +33,7 @@ export function Navbar() {
             >
               <img
                 src={theme === 'dark' ? logoBranca : logo}
-                alt="Jadi.ia Logo"
+                alt="Jad.ia Logo"
                 className="h-6 w-6 object-contain"
               />
             </div>
@@ -41,7 +41,7 @@ export function Navbar() {
               className="font-bold text-base tracking-tight hidden sm:block"
               style={{ fontFamily: 'var(--app-font-serif)' }}
             >
-              Jadi.ia
+              Jad.ia
             </span>
           </Link>
 

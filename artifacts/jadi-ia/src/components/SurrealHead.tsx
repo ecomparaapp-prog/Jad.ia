@@ -108,7 +108,7 @@ export function SurrealHead({ className = "" }: { className?: string }) {
         {/* The surreal head image — mix-blend-mode:screen removes black bg */}
         <motion.img
           src={headImage}
-          alt="Jadi.ia Surreal AI Head"
+          alt="Jad.ia Surreal AI Head"
           className="relative w-full h-full object-contain select-none"
           style={{
             mixBlendMode: "screen",

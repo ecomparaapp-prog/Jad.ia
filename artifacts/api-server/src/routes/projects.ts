@@ -150,15 +150,15 @@ function getExtension(language: string): string {
 
 function getDefaultContent(language: string): string {
   const map: Record<string, string> = {
-    javascript: `// Olá, mundo!\nconsole.log("Bem-vindo ao Jadi.ia!");\n`,
-    typescript: `// Olá, mundo!\nconst mensagem: string = "Bem-vindo ao Jadi.ia!";\nconsole.log(mensagem);\n`,
-    python: `# Olá, mundo!\nprint("Bem-vindo ao Jadi.ia!")\n`,
-    html: `<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n  <meta charset="UTF-8">\n  <title>Meu Projeto</title>\n</head>\n<body>\n  <h1>Bem-vindo ao Jadi.ia!</h1>\n</body>\n</html>\n`,
+    javascript: `// Olá, mundo!\nconsole.log("Bem-vindo ao Jad.ia!");\n`,
+    typescript: `// Olá, mundo!\nconst mensagem: string = "Bem-vindo ao Jad.ia!";\nconsole.log(mensagem);\n`,
+    python: `# Olá, mundo!\nprint("Bem-vindo ao Jad.ia!")\n`,
+    html: `<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n  <meta charset="UTF-8">\n  <title>Meu Projeto</title>\n</head>\n<body>\n  <h1>Bem-vindo ao Jad.ia!</h1>\n</body>\n</html>\n`,
     css: `/* Estilos do projeto */\nbody {\n  font-family: sans-serif;\n  margin: 0;\n  padding: 20px;\n}\n`,
-    react: `import React from 'react';\n\nexport default function App() {\n  return (\n    <div>\n      <h1>Bem-vindo ao Jadi.ia!</h1>\n    </div>\n  );\n}\n`,
-    vue: `<template>\n  <div>\n    <h1>Bem-vindo ao Jadi.ia!</h1>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'App'\n}\n</script>\n`,
+    react: `import React from 'react';\n\nexport default function App() {\n  return (\n    <div>\n      <h1>Bem-vindo ao Jad.ia!</h1>\n    </div>\n  );\n}\n`,
+    vue: `<template>\n  <div>\n    <h1>Bem-vindo ao Jad.ia!</h1>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'App'\n}\n</script>\n`,
   };
-  return map[language.toLowerCase()] ?? `// ${language}\n// Bem-vindo ao Jadi.ia!\n`;
+  return map[language.toLowerCase()] ?? `// ${language}\n// Bem-vindo ao Jad.ia!\n`;
 }
 
 export default router;

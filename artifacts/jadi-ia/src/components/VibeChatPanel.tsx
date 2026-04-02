@@ -899,7 +899,7 @@ ${soundLines || "  - Nenhum son disponível"}`;
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground leading-none">Jadi.ia</span>
+                <span className="text-sm font-semibold text-foreground leading-none">Jad.ia</span>
                 {vibeMode && (
                   <span className="text-[10px] font-mono bg-teal-500/15 text-teal-400 border border-teal-500/25 px-1.5 py-0.5 rounded-full">
                     multi-arquivo

@@ -8,7 +8,7 @@ export async function seedAdminUser(): Promise<void> {
     const [existing] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, "admin@jadi.ia"));
+      .where(eq(usersTable.email, "admin@jad.ia"));
 
     if (existing) {
       logger.info("Usuário admin já existe — seed ignorado");
@@ -18,11 +18,11 @@ export async function seedAdminUser(): Promise<void> {
     const passwordHash = await hashPassword("admin123");
     await db.insert(usersTable).values({
       name: "Admin",
-      email: "admin@jadi.ia",
+      email: "admin@jad.ia",
       passwordHash,
     });
 
-    logger.info("Usuário de teste criado: admin@jadi.ia / admin123");
+    logger.info("Usuário de teste criado: admin@jad.ia / admin123");
   } catch (err) {
     logger.error({ err }, "Erro ao criar usuário de teste");
   }

@@ -175,7 +175,7 @@ router.post("/ai/chat", requireAuth, async (req, res): Promise<void> => {
 
   const { messages, projectContext, language, systemPrompt } = parsed.data;
 
-  const baseSystemContent = `Você é Jadi, uma assistente de desenvolvimento de software inteligente integrada na plataforma Jadi.ia.
+  const baseSystemContent = `Você é Jadi, uma assistente de desenvolvimento de software inteligente integrada na plataforma Jad.ia.
 Você ajuda desenvolvedores brasileiros a criar sites, sistemas, web apps e aplicativos mobile.
 Responda sempre em português do Brasil.
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
@@ -259,7 +259,7 @@ router.post("/ai/analyze-stack", requireAuth, async (req, res): Promise<void> =>
   const messages: OpenAIMessage[] = [
     {
       role: "system",
-      content: `Você é o SISTEMA ANALISTA do Jadi.ia, especializado em arquitetura de software e seleção de tecnologias.
+      content: `Você é o SISTEMA ANALISTA do Jad.ia, especializado em arquitetura de software e seleção de tecnologias.
 Sua missão é analisar a descrição de um projeto e recomendar a stack tecnológica ideal.
 Utilize raciocínio técnico preciso. Responda SEMPRE em formato JSON válido, sem texto extra antes ou depois.
 Use linguagem técnica clara e objetiva. Responda em português do Brasil.`,
@@ -366,13 +366,13 @@ router.post("/ai/stream", requireAuth, async (req, res): Promise<void> => {
   const isAnalyst = taskType === "analise";
 
   const baseSystem = isAnalyst
-    ? `Você é o SISTEMA ANALISTA do Jadi.ia. Especialista em arquitetura de software, análise de requisitos e planejamento técnico.
+    ? `Você é o SISTEMA ANALISTA do Jad.ia. Especialista em arquitetura de software, análise de requisitos e planejamento técnico.
 Analise projetos com profundidade técnica, gere diagnósticos precisos e planos estruturados.
 Use linguagem técnica objetiva. Formate respostas em listas técnicas claras.
 Responda sempre em português do Brasil.
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
 ${language && language !== "auto" ? `Linguagem principal: ${language}` : ""}`
-    : `Você é o SISTEMA CONSTRUTOR do Jadi.ia. Executor especializado em geração de código limpo, funcional e bem estruturado.
+    : `Você é o SISTEMA CONSTRUTOR do Jad.ia. Executor especializado em geração de código limpo, funcional e bem estruturado.
 Você transforma planos em código real. Priorize código funcional e completo acima de tudo.
 Sempre use blocos de código com linguagem especificada (ex: \`\`\`javascript).
 Responda sempre em português do Brasil.

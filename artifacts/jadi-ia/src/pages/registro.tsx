@@ -47,7 +47,7 @@ export default function Registro() {
     mutation: {
       onSuccess: (data) => {
         setToken(data.token);
-        toast({ title: "Conta criada!", description: `Bem-vindo ao Jadi.ia, ${data.user.name}!` });
+        toast({ title: "Conta criada!", description: `Bem-vindo ao Jad.ia, ${data.user.name}!` });
         setLocation("/dashboard");
       },
       onError: (error: { data?: { error?: string } }) => {
@@ -86,13 +86,13 @@ export default function Registro() {
             className="flex items-center gap-4 mb-10"
           >
             <div className="glass-card p-4 inline-flex" style={{ borderRadius: '1.5rem' }}>
-              <img src={theme === "dark" ? logoBranca : logo} alt="Jadi.ia" className="h-14 w-14 object-contain" />
+              <img src={theme === "dark" ? logoBranca : logo} alt="Jad.ia" className="h-14 w-14 object-contain" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--app-font-serif)' }}>Jadi.ia</h2>
+              <h2 className="text-2xl font-bold" style={{ fontFamily: 'var(--app-font-serif)' }}>Jad.ia</h2>
               <div className="flex items-center gap-1.5 mt-1">
                 <Sparkles className="h-3.5 w-3.5" style={{ color: '#FF8C00' }} strokeWidth={1.5} />
-                <span className="text-xs text-muted-foreground">Powered by jadi.ia</span>
+                <span className="text-xs text-muted-foreground">Powered by jad.ia</span>
               </div>
             </div>
           </motion.div>
@@ -136,8 +136,8 @@ export default function Registro() {
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <img src={theme === "dark" ? logoBranca : logo} alt="Jadi.ia" className="h-10 w-10 object-contain" />
-            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jadi.ia</span>
+            <img src={theme === "dark" ? logoBranca : logo} alt="Jad.ia" className="h-10 w-10 object-contain" />
+            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jad.ia</span>
           </div>
 
           <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: 'var(--app-font-serif)' }}>

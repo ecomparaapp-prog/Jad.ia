@@ -169,7 +169,7 @@ export default function Home() {
               className="text-gray-400 text-base md:text-lg max-w-xl mb-8 leading-relaxed"
               style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}
             >
-              Descreva o que quer construir em português. A jadi.ia gera código em tempo real, cria projetos completos e evolui junto com você.
+              Descreva o que quer construir em português. A jad.ia gera código em tempo real, cria projetos completos e evolui junto com você.
             </motion.p>
 
             {/* CTA Buttons — side by side */}
@@ -284,7 +284,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--app-font-mono)", color: "#00897B" }}>
-              O que a jadi.ia faz
+              O que a jad.ia faz
             </p>
             <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: "var(--app-font-serif)" }}>
               Nossos Serviços
@@ -442,7 +442,7 @@ export default function Home() {
                   <div className="h-3 w-3 rounded-full" style={{ background: "#FEBC2E" }} />
                   <div className="h-3 w-3 rounded-full" style={{ background: "#28C840" }} />
                   <span className="text-xs text-gray-500 ml-2" style={{ fontFamily: "var(--app-font-mono)" }}>
-                    jadi.ia — editor
+                    jad.ia — editor
                   </span>
                 </div>
                 <div className="space-y-3" style={{ fontFamily: "var(--app-font-mono)", fontSize: "0.8rem" }}>

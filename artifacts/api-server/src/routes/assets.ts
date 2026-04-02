@@ -45,7 +45,7 @@ async function searchPixabayImages(query: string, count = 3): Promise<string[]> 
     const res = await fetch(url, {
       headers: {
         "Referer": "https://pixabay.com",
-        "User-Agent": "Mozilla/5.0 Jadi.ia AssetEngine/1.0",
+        "User-Agent": "Mozilla/5.0 Jad.ia AssetEngine/1.0",
       },
     });
     if (!res.ok) {

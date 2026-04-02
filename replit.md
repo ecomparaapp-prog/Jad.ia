@@ -3,7 +3,7 @@
 ## Overview
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
-This is the **Jadi.ia** project — a PT-BR platform for creating websites, systems, web apps, and mobile applications with AI assistance (Groq).
+This is the **Jad.ia** project — a PT-BR platform for creating websites, systems, web apps, and mobile applications with AI assistance (Groq).
 
 ## Stack
 
