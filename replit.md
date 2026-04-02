@@ -3,6 +3,7 @@
 ## Overview
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+This is the **Jadi.ia** project — a PT-BR platform for creating websites, systems, web apps, and mobile applications with AI assistance (Groq).
 
 ## Stack
 
@@ -15,33 +16,33 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite + TailwindCSS + shadcn/ui
+- **AI**: Groq API (requires `GROQ_API_KEY` env var)
+- **Auth**: Bearer token (in-memory sessions via Map, stored in localStorage)
 
 ## Structure
 
 ```text
 artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+├── artifacts/
+│   ├── api-server/         # Express API server (port from $PORT, default 8080)
+│   └── jadi-ia/            # React+Vite SPA frontend
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+├── attached_assets/        # Logo images (logo.png, logo_sem_fundo_branca*.jpg)
+├── pnpm-workspace.yaml
+├── tsconfig.base.json
+└── replit.md
 ```
 
 ## TypeScript & Composite Projects
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. Always typecheck from root: `pnpm run typecheck`.
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+When running `tsc --noEmit` in a sub-package, first build the api-client-react declarations: `cd lib/api-client-react && npx tsc -p tsconfig.json`
 
 ## Root Scripts
 
@@ -52,45 +53,63 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server. Routes in `src/routes/`. Runs on port from `$PORT` env.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+Routes:
+- `/api/auth/*` — register, login, logout, me
+- `/api/projects/*` — CRUD projects
+- `/api/projects/:id/files/*` — CRUD project files
+- `/api/projects/:id/secrets/*` — CRUD project secrets
+- `/api/ai/chat` — AI chat (Groq)
+- `/api/ai/generate-prompt` — prompt generator (Groq)
+- `/api/stats/dashboard` — dashboard stats
+- `/api/stats/activity` — recent activity
+- `/api/healthz` — health check
+
+Auth: Bearer token stored in-memory `Map<token, userId>`. `requireAuth` middleware validates.
+
+**IMPORTANT**: Requires `GROQ_API_KEY` env var for AI features.
+
+### `artifacts/jadi-ia` (`@workspace/jadi-ia`)
+
+React + Vite SPA, entirely in PT-BR. Pages:
+- `/` — Landing page (Home)
+- `/login` — Login page
+- `/registro` — Registration page
+- `/dashboard` — User dashboard (projects list + stats)
+- `/projetos/novo` — Create new project
+- `/projetos/:id` — Code editor + AI chat + secrets + git tab
+- `/perfil` — User profile
+
+Features:
+- Dark/light theme toggle (ThemeProvider)
+- AuthProvider with Bearer token via localStorage
+- Code editor with line numbers, Tab key support, Ctrl+S save
+- AI chat panel (Groq via api-server)
+- File manager sidebar
+- Secrets manager sidebar
+- Git tab (placeholder)
+- Framer Motion animations
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+PostgreSQL via Drizzle ORM.
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+Schema tables:
+- `users` — id, name, email, passwordHash, createdAt, updatedAt
+- `projects` — id, userId, name, description, language, theme, isPublic, createdAt, updatedAt
+- `project_files` — id, projectId, name, content, language, createdAt, updatedAt
+- `project_secrets` — id, projectId, key, value, createdAt, updatedAt
+- `activity_logs` — id, userId, type, description, projectId, projectName, createdAt
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+Push schema: `pnpm --filter @workspace/db run push`
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
+OpenAPI 3.1 spec (`openapi.yaml`) + Orval config.
 Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
 
 ### `lib/api-client-react` (`@workspace/api-client-react`)
 
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+Generated React Query hooks. Exports `setAuthTokenGetter` for Bearer token setup.
+Build declarations: `cd lib/api-client-react && npx tsc -p tsconfig.json`

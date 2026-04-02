@@ -1,15 +1,27 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Jadi.ia API - Plataforma de criação de sites e aplicações com IA
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Autenticação e sessão de usuários
+  - name: projects
+    description: Gerenciamento de projetos
+  - name: files
+    description: Arquivos de código dos projetos
+  - name: secrets
+    description: Segredos e variáveis de ambiente dos projetos
+  - name: ai
+    description: Integração com IA (Groq)
+  - name: stats
+    description: Estatísticas e atividade
+
 paths:
   /healthz:
     get:
@@ -24,6 +36,469 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Registrar novo usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email já utilizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login do usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login bem sucedido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout do usuário
+      responses:
+        "200":
+          description: Logout bem sucedido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Dados do usuário autenticado
+      responses:
+        "200":
+          description: Dados do usuário
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # PROJECTS
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: Listar projetos do usuário
+      responses:
+        "200":
+          description: Lista de projetos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Criar novo projeto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Projeto criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Buscar projeto por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Projeto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Projeto não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Atualizar projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectBody"
+      responses:
+        "200":
+          description: Projeto atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Projeto não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Deletar projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Projeto deletado
+
+  # FILES
+  /projects/{id}/files:
+    get:
+      operationId: listProjectFiles
+      tags: [files]
+      summary: Listar arquivos de um projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de arquivos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectFile"
+
+    post:
+      operationId: createProjectFile
+      tags: [files]
+      summary: Criar arquivo no projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFileBody"
+      responses:
+        "201":
+          description: Arquivo criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectFile"
+
+  /projects/{id}/files/{fileId}:
+    get:
+      operationId: getProjectFile
+      tags: [files]
+      summary: Buscar arquivo específico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Arquivo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectFile"
+        "404":
+          description: Arquivo não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateProjectFile
+      tags: [files]
+      summary: Atualizar conteúdo do arquivo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFileBody"
+      responses:
+        "200":
+          description: Arquivo atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectFile"
+
+    delete:
+      operationId: deleteProjectFile
+      tags: [files]
+      summary: Deletar arquivo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Arquivo deletado
+
+  # SECRETS
+  /projects/{id}/secrets:
+    get:
+      operationId: listProjectSecrets
+      tags: [secrets]
+      summary: Listar secrets do projeto (apenas chaves)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de secrets (apenas chaves visíveis)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectSecret"
+
+    post:
+      operationId: createProjectSecret
+      tags: [secrets]
+      summary: Criar secret no projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSecretBody"
+      responses:
+        "201":
+          description: Secret criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectSecret"
+
+  /projects/{id}/secrets/{secretId}:
+    delete:
+      operationId: deleteProjectSecret
+      tags: [secrets]
+      summary: Deletar secret do projeto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: secretId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Secret deletado
+
+  # AI
+  /ai/chat:
+    post:
+      operationId: aiChat
+      tags: [ai]
+      summary: Enviar mensagem para IA (Groq)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatBody"
+      responses:
+        "200":
+          description: Resposta da IA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiChatResponse"
+        "500":
+          description: Erro na IA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ai/generate-prompt:
+    post:
+      operationId: generatePrompt
+      tags: [ai]
+      summary: Agente técnico gera prompt otimizado para desenvolvimento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePromptBody"
+      responses:
+        "200":
+          description: Prompt gerado pelo agente técnico
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratePromptResponse"
+
+  # STATS
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Estatísticas do dashboard do usuário
+      responses:
+        "200":
+          description: Estatísticas gerais
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [stats]
+      summary: Atividade recente do usuário
+      responses:
+        "200":
+          description: Atividade recente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +509,333 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # AUTH
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - createdAt
+
+    # PROJECTS
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        language:
+          type: string
+        theme:
+          type: string
+        isPublic:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - name
+        - language
+        - theme
+        - isPublic
+        - createdAt
+        - updatedAt
+
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        language:
+          type: string
+        theme:
+          type: string
+      required:
+        - name
+        - language
+
+    UpdateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        language:
+          type: string
+        theme:
+          type: string
+        isPublic:
+          type: boolean
+
+    # FILES
+    ProjectFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        name:
+          type: string
+        content:
+          type: string
+        language:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - name
+        - content
+        - language
+        - createdAt
+        - updatedAt
+
+    CreateFileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        content:
+          type: string
+        language:
+          type: string
+      required:
+        - name
+        - language
+
+    UpdateFileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        content:
+          type: string
+        language:
+          type: string
+
+    # SECRETS
+    ProjectSecret:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        key:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - key
+        - createdAt
+
+    CreateSecretBody:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+      required:
+        - key
+        - value
+
+    # AI
+    AiMessage:
+      type: object
+      properties:
+        role:
+          type: string
+        content:
+          type: string
+      required:
+        - role
+        - content
+
+    AiChatBody:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiMessage"
+        projectContext:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+      required:
+        - messages
+
+    AiChatResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        codeBlocks:
+          type: array
+          items:
+            type: string
+      required:
+        - message
+        - codeBlocks
+
+    GeneratePromptBody:
+      type: object
+      properties:
+        description:
+          type: string
+        projectType:
+          type: string
+        language:
+          type: string
+      required:
+        - description
+        - projectType
+
+    GeneratePromptResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - prompt
+        - suggestions
+
+    # STATS
+    DashboardStats:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        totalFiles:
+          type: integer
+        recentProjectsCount:
+          type: integer
+        languagesUsed:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+              count:
+                type: integer
+            required:
+              - language
+              - count
+      required:
+        - totalProjects
+        - totalFiles
+        - recentProjectsCount
+        - languagesUsed
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        description:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+        projectName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - description
+        - createdAt
