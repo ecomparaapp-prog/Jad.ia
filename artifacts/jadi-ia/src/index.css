@@ -2,6 +2,19 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

@@ -383,7 +383,7 @@ export default function Editor() {
 
   return (
     <>
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ height: "calc(100vh - 56px)" }}>
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="h-12 border-b border-border bg-background flex items-center px-3 gap-3 flex-shrink-0">
         <Button
           variant="ghost"
