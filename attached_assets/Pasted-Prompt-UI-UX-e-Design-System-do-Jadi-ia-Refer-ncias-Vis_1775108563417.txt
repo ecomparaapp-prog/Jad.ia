@@ -1,0 +1,44 @@
+Prompt: UI/UX e Design System do Jadi.ia (Referências Visuais)
+"Crie o Design System e a UI/UX completa para o app Jadi.ia, utilizando as imagens de referência fornecidas. O estilo deve ser um 'Rústico Moderno Minimalista', unindo a leveza de interfaces modernas com a organicidade da marca.
+
+Instruções Detalhadas:
+
+1. Paleta de Cores (Baseada na image_4.png):
+
+Fundo Principal: Use o tom mais claro de bege/creme da image_4.png (ex: 194, 197, 170).
+
+Fundo de Cards/Sessões: Use o tom creme intermediário (ex: 182, 173, 144).
+
+Accent Color (Destaque): Use o marrom terracota mais escuro (ex: 88, 47, 14) para textos principais, ícones ativos e bordas finas.
+
+Secondary Accent (Botões/Labels): Use os tons de verde oliva (ex: 101, 109, 74 e 65, 72, 51) para botões secundários e estados de 'sucesso'.
+
+2. Estrutura de Navegação (Baseada na image_1.png):
+
+Implemente a barra lateral (Sidebar) expansível idêntica à da image_1.png.
+
+Itens de Menu: Use ícones minimalistas e texto monoespaçado para: Dashboard, Audiência, Projetos (com contador de projetos ativos), Git, Secrets, e Configurações (com seletor de Temas).
+
+Dropdowns: Mantenha a funcionalidade de submenus (como 'Income -> Earnings, Refunds' da referência) para organizar os arquivos de um projeto aberto.
+
+3. Design System e Elementos (Baseado na image_2.png):
+
+Botões e Inputs: Devem ser Neuromórficos e Soft 3D, com cantos muito arredondados e sombras suaves, idênticos aos botões bege e verdes da image_2.png. Eles devem parecer objetos táteis.
+
+Cards: Use cards com profundidade suave para conter o chat e os previews.
+
+Cabeçalho: Coloque o nome 'Jadi.ia' e a Logo (óculos minimalista) no canto superior esquerdo, e o botão de 'Profile/Logout' no canto superior direito, com estética soft 3D.
+
+4. Estrutura da Página Principal (Baseada na image_3.png):
+
+A 'Home' deve ter um Hero Section impactante. Centralize a Logo (óculos minimalista) e coloque um texto monoespaçado grande: 'Sua IA de Vibe Coding'.
+
+Abaixo, crie cards neuromórficos (inspirados na image_2.png) mostrando os 'Projetos Recentes' e estatísticas rápidas.
+
+5. Temas:
+
+Claro (Original): Use a paleta acima.
+
+Escuro (Dark): Inverta as cores, usando os marrons e verdes escuros como fundo e os beges claros para texto.
+
+Colorido: Faça o marrom terracota ser a cor de fundo e os cremes as cores de texto, para um visual rústico intenso."

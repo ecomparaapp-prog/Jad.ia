@@ -450,7 +450,7 @@ export default function VibeChatPanel({
       animate={{ width: 360, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex-shrink-0 border-l border-white/10 flex flex-col overflow-hidden"
+      className="flex-shrink-0 border-r border-white/10 flex flex-col overflow-hidden"
       style={{
         background: "rgba(10, 10, 20, 0.85)",
         backdropFilter: "blur(20px)",
