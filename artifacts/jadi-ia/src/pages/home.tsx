@@ -11,6 +11,10 @@ import {
   VueLogo, NodeLogo, NextLogo, HTMLLogo
 } from "@/components/TechLogos";
 
+const BG = "#F4F5F7";
+const BG_ALT = "#ECEEF2";
+const BORDER = "rgba(0,0,0,0.07)";
+
 const services = [
   { icon: Bot, title: "Vibe Coding IA", desc: "Descreva em português e a IA gera código em tempo real via streaming.", accent: "primary" },
   { icon: Code2, title: "Editor Inteligente", desc: "Syntax highlighting, autocomplete e sugestões contextuais da IA.", accent: "secondary" },
@@ -58,32 +62,29 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto overflow-x-hidden" style={{ background: BG }}>
 
       {/* ══════════════════════════════════════════
-          HERO — dark, surreal 3D head centered
+          HERO — light clean
       ══════════════════════════════════════════ */}
       <section
         className="relative overflow-hidden"
-        style={{
-          background: "linear-gradient(160deg, #050505 0%, #080808 50%, #0a0a0a 100%)",
-          minHeight: "100vh",
-        }}
+        style={{ background: BG, minHeight: "100vh" }}
       >
-        {/* Ambient orbs — neutral dark palette */}
+        {/* Ambient orbs — subtle light palette */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-15%] left-[-10%] w-[55vw] h-[55vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(80,0,120,0.12) 0%, transparent 70%)", filter: "blur(100px)" }} />
-          <div className="absolute bottom-[-10%] right-[-8%] w-[45vw] h-[45vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(180,60,0,0.10) 0%, transparent 70%)", filter: "blur(120px)" }} />
-          <div className="absolute top-[25%] right-[5%] w-[30vw] h-[30vw] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(0,80,180,0.07) 0%, transparent 70%)", filter: "blur(80px)" }} />
+          <div className="absolute top-[-10%] left-[-5%] w-[50vw] h-[50vw] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(0,196,167,0.08) 0%, transparent 70%)", filter: "blur(80px)" }} />
+          <div className="absolute bottom-[-5%] right-[-5%] w-[40vw] h-[40vw] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(255,107,53,0.07) 0%, transparent 70%)", filter: "blur(100px)" }} />
+          <div className="absolute top-[30%] right-[10%] w-[25vw] h-[25vw] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(0,137,123,0.06) 0%, transparent 70%)", filter: "blur(60px)" }} />
         </div>
 
         <div className="container mx-auto px-4 py-16 relative">
           <div className="flex flex-col items-center text-center" style={{ minHeight: "90vh", justifyContent: "center" }}>
 
-            {/* Surreal 3D Head — TOP */}
+            {/* Surreal 3D Head */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -102,14 +103,15 @@ export default function Home() {
                 <div
                   className="p-4 text-center"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.09)",
+                    background: "rgba(255,255,255,0.85)",
+                    border: `1px solid ${BORDER}`,
                     borderRadius: "1.25rem",
                     backdropFilter: "blur(20px)",
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
                     minWidth: "100px",
                   }}
                 >
-                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "var(--app-font-serif)" }}>50K+</p>
+                  <p className="text-2xl font-bold text-gray-800">50K+</p>
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">Projetos<br />Criados</p>
                 </div>
               </motion.div>
@@ -126,25 +128,26 @@ export default function Home() {
                 <div
                   className="p-4 text-center"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.09)",
+                    background: "rgba(255,255,255,0.85)",
+                    border: `1px solid ${BORDER}`,
                     borderRadius: "1.25rem",
                     backdropFilter: "blur(20px)",
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
                     minWidth: "100px",
                   }}
                 >
-                  <p className="text-2xl font-bold text-white" style={{ fontFamily: "var(--app-font-serif)" }}>10K+</p>
+                  <p className="text-2xl font-bold text-gray-800">10K+</p>
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">Devs<br />Ativos</p>
                 </div>
               </motion.div>
             </motion.div>
 
-            {/* Headline — single line */}
+            {/* Headline */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="font-bold text-white leading-tight mb-4 whitespace-nowrap"
+              className="font-bold leading-tight mb-4 whitespace-nowrap text-gray-900"
               style={{
                 fontFamily: "var(--app-font-serif)",
                 letterSpacing: "-0.02em",
@@ -153,7 +156,7 @@ export default function Home() {
             >
               Jad.ia{" "}
               <span style={{
-                background: "linear-gradient(135deg, #00C4A7 0%, #FF6B35 50%, #FF00CC 100%)",
+                background: "linear-gradient(135deg, #00897B 0%, #FF6B35 50%, #FF00CC 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -166,13 +169,12 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.4 }}
-              className="text-gray-400 text-base md:text-lg max-w-xl mb-8 leading-relaxed"
-              style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}
+              className="text-gray-500 text-base md:text-lg max-w-xl mb-8 leading-relaxed"
             >
               Descreva o que quer construir em português. A jad.ia gera código em tempo real, cria projetos completos e evolui junto com você.
             </motion.p>
 
-            {/* CTA Buttons — side by side */}
+            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -180,28 +182,26 @@ export default function Home() {
               className="flex flex-row gap-4"
             >
               <motion.button
-                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(0,196,167,0.35)" }}
+                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(0,137,123,0.30)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/registro")}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full text-white"
                 style={{
                   background: "linear-gradient(135deg, #00897B 0%, #26C6B0 100%)",
-                  boxShadow: "0 0 30px rgba(0,137,123,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
-                  fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
+                  boxShadow: "0 0 24px rgba(0,137,123,0.28), inset 0 1px 0 rgba(255,255,255,0.15)",
                 }}
               >
                 Começar agora
                 <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(255,107,53,0.55)" }}
+                whileHover={{ scale: 1.04, boxShadow: "0 0 36px rgba(255,107,53,0.40)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setLocation("/login")}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold rounded-full text-white"
                 style={{
                   background: "linear-gradient(135deg, #E65100 0%, #FF6B35 60%, #FF8C42 100%)",
-                  boxShadow: "0 0 28px rgba(255,107,53,0.40), inset 0 1px 0 rgba(255,255,255,0.18)",
-                  fontFamily: "var(--app-font-sans)",
+                  boxShadow: "0 0 22px rgba(255,107,53,0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
                 }}
               >
                 Entrar na plataforma
@@ -214,7 +214,7 @@ export default function Home() {
         {/* Ticker */}
         <div
           className="border-t border-b overflow-hidden py-4"
-          style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.4)" }}
+          style={{ borderColor: BORDER, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(10px)" }}
         >
           <motion.div
             animate={{ x: ["0%", "-50%"] }}
@@ -222,7 +222,7 @@ export default function Home() {
             className="flex gap-8 whitespace-nowrap"
           >
             {[...tickerItems, ...tickerItems].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--app-font-mono)" }}>
+              <div key={i} className="flex items-center gap-3 text-sm font-medium text-gray-400" style={{ fontFamily: "var(--app-font-mono)" }}>
                 <span
                   className="h-1.5 w-1.5 rounded-full flex-shrink-0"
                   style={{ background: i % 3 === 0 ? "#00C4A7" : i % 3 === 1 ? "#FF6B35" : "#CC00FF" }}
@@ -237,13 +237,13 @@ export default function Home() {
       {/* ══════════════════════════════════
           TECH LOGOS
       ══════════════════════════════════ */}
-      <section className="py-16 bg-background">
+      <section style={{ background: BG_ALT, paddingTop: "4rem", paddingBottom: "4rem" }}>
         <div className="container mx-auto px-4">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-center text-xs uppercase tracking-widest text-muted-foreground mb-8"
+            className="text-center text-xs uppercase tracking-widest text-gray-400 mb-8"
             style={{ fontFamily: "var(--app-font-mono)" }}
           >
             Suporte completo a
@@ -259,9 +259,18 @@ export default function Home() {
                 variants={fadeUp}
                 whileHover={{ y: -4, scale: 1.06 }}
               >
-                <div className="glass-card-sm flex flex-col items-center gap-2 px-5 py-4" style={{ borderRadius: "1.25rem", minWidth: "90px" }}>
+                <div
+                  className="flex flex-col items-center gap-2 px-5 py-4"
+                  style={{
+                    background: "rgba(255,255,255,0.9)",
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: "1.25rem",
+                    minWidth: "90px",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                  }}
+                >
                   <Logo size={32} />
-                  <span className="text-xs text-muted-foreground font-medium" style={{ fontFamily: "var(--app-font-mono)" }}>{name}</span>
+                  <span className="text-xs text-gray-400 font-medium" style={{ fontFamily: "var(--app-font-mono)" }}>{name}</span>
                 </div>
               </motion.div>
             ))}
@@ -270,9 +279,9 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          SERVICES — small glassmorphism cards
+          SERVICES
       ══════════════════════════════════ */}
-      <section className="py-24 bg-background">
+      <section style={{ background: BG, paddingTop: "6rem", paddingBottom: "6rem" }}>
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -281,13 +290,13 @@ export default function Home() {
             transition={{ duration: 0.7 }}
             className="text-center mb-16"
           >
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--app-font-mono)", color: "#00897B" }}>
+            <p className="text-xs uppercase tracking-widest mb-3 text-emerald-600" style={{ fontFamily: "var(--app-font-mono)" }}>
               O que a jad.ia faz
             </p>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: "var(--app-font-serif)" }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900" style={{ fontFamily: "var(--app-font-serif)" }}>
               Nossos Serviços
             </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto" style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}>
+            <p className="text-gray-400 max-w-lg mx-auto">
               Uma plataforma completa para criar qualquer tipo de software com o poder da IA.
             </p>
           </motion.div>
@@ -308,14 +317,19 @@ export default function Home() {
                   className="h-full flex flex-col p-5"
                   style={{
                     borderRadius: "1.5rem",
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    backdropFilter: "blur(20px)",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
-                    transition: "border-color 0.2s",
+                    background: "rgba(255,255,255,0.9)",
+                    border: `1px solid ${BORDER}`,
+                    boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = s.accent === "primary" ? "rgba(0,196,167,0.25)" : "rgba(255,107,53,0.25)")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = s.accent === "primary" ? "rgba(0,137,123,0.30)" : "rgba(255,107,53,0.30)";
+                    e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.08)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = BORDER;
+                    e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.04)";
+                  }}
                 >
                   <div
                     className="h-10 w-10 rounded-2xl flex items-center justify-center mb-4 flex-shrink-0 text-white"
@@ -324,16 +338,16 @@ export default function Home() {
                         ? "linear-gradient(135deg, #00695C 0%, #26A69A 100%)"
                         : "linear-gradient(135deg, #E65100 0%, #FFA726 100%)",
                       boxShadow: s.accent === "primary"
-                        ? "0 4px 16px rgba(38,166,154,0.35)"
-                        : "0 4px 16px rgba(255,140,0,0.30)",
+                        ? "0 4px 12px rgba(38,166,154,0.25)"
+                        : "0 4px 12px rgba(255,140,0,0.22)",
                     }}
                   >
                     <s.icon className="h-4.5 w-4.5" strokeWidth={1.5} style={{ height: "18px", width: "18px" }} />
                   </div>
-                  <h3 className="font-semibold text-sm mb-1.5 leading-tight" style={{ fontFamily: "var(--app-font-serif)" }}>
+                  <h3 className="font-semibold text-sm mb-1.5 leading-tight text-gray-800" style={{ fontFamily: "var(--app-font-serif)" }}>
                     {s.title}
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}>
+                  <p className="text-xs text-gray-400 leading-relaxed">
                     {s.desc}
                   </p>
                 </div>
@@ -344,14 +358,11 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          STATS BAR
+          STATS BAR — light version
       ══════════════════════════════════ */}
-      <section
-        className="py-16 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #020E0A 0%, #030D0A 100%)" }}
-      >
+      <section style={{ background: BG_ALT, paddingTop: "4rem", paddingBottom: "4rem", position: "relative", overflow: "hidden" }}>
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse 80% 50% at 50% 50%, rgba(0,137,123,0.15), transparent)" }} />
+          style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,137,123,0.06), transparent)" }} />
         <div className="container mx-auto px-4 relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((s, i) => (
@@ -370,8 +381,8 @@ export default function Home() {
                 >
                   <s.icon className="h-5 w-5" strokeWidth={1.5} />
                 </div>
-                <p className="text-4xl font-bold text-white mb-1" style={{ fontFamily: "var(--app-font-serif)" }}>{s.value}</p>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "var(--app-font-mono)" }}>{s.label}</p>
+                <p className="text-4xl font-bold text-gray-800 mb-1" style={{ fontFamily: "var(--app-font-serif)" }}>{s.value}</p>
+                <p className="text-sm text-gray-400" style={{ fontFamily: "var(--app-font-mono)" }}>{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -379,9 +390,9 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          CODE DEMO SECTION
+          CODE DEMO
       ══════════════════════════════════ */}
-      <section className="py-24 bg-background">
+      <section style={{ background: BG, paddingTop: "6rem", paddingBottom: "6rem" }}>
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
             <motion.div
@@ -390,13 +401,13 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <p className="text-xs uppercase tracking-widest mb-3" style={{ fontFamily: "var(--app-font-mono)", color: "#00897B" }}>
+              <p className="text-xs uppercase tracking-widest mb-3 text-emerald-600" style={{ fontFamily: "var(--app-font-mono)" }}>
                 Como funciona
               </p>
-              <h2 className="text-4xl font-bold mb-5 leading-tight" style={{ fontFamily: "var(--app-font-serif)" }}>
+              <h2 className="text-4xl font-bold mb-5 leading-tight text-gray-900" style={{ fontFamily: "var(--app-font-serif)" }}>
                 IA que entende<br />código de verdade
               </h2>
-              <p className="text-muted-foreground leading-relaxed mb-8" style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}>
+              <p className="text-gray-400 leading-relaxed mb-8">
                 Converse em português para gerar componentes, resolver bugs, refatorar código e criar projetos completos — tudo em tempo real.
               </p>
               <div className="space-y-4">
@@ -408,11 +419,11 @@ export default function Home() {
                   <div key={text} className="flex items-center gap-3">
                     <div
                       className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
-                      style={{ background: "linear-gradient(135deg, #00695C, #26A69A)", boxShadow: "0 4px 16px rgba(38,166,154,0.3)" }}
+                      style={{ background: "linear-gradient(135deg, #00695C, #26A69A)", boxShadow: "0 4px 12px rgba(38,166,154,0.22)" }}
                     >
                       <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                     </div>
-                    <span className="text-sm font-medium" style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}>{text}</span>
+                    <span className="text-sm font-medium text-gray-700">{text}</span>
                   </div>
                 ))}
               </div>
@@ -428,11 +439,10 @@ export default function Home() {
               <div
                 className="p-6 text-left"
                 style={{
-                  background: "rgba(4,12,10,0.95)",
-                  border: "1px solid rgba(0,137,123,0.18)",
+                  background: "#1a1f2e",
+                  border: `1px solid rgba(0,137,123,0.20)`,
                   borderRadius: "2rem",
-                  backdropFilter: "blur(20px)",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
                 }}
               >
                 <div className="flex gap-1.5 mb-5">
@@ -454,7 +464,7 @@ export default function Home() {
                   </p>
                   <div
                     className="rounded-xl p-4 mt-2 text-xs leading-6"
-                    style={{ background: "rgba(0,137,123,0.07)", border: "1px solid rgba(0,137,123,0.13)" }}
+                    style={{ background: "rgba(0,137,123,0.10)", border: "1px solid rgba(0,137,123,0.15)" }}
                   >
                     <code style={{ color: "#00C4A7" }}>{`const schema = z.object({`}</code><br />
                     <code style={{ color: "#94a3b8", paddingLeft: "1.5rem" }}>{`email: z.string().email(),`}</code><br />
@@ -472,17 +482,14 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
-          CTA
+          CTA — light version
       ══════════════════════════════════ */}
-      <section
-        className="py-24 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #030808 0%, #060f0d 100%)" }}
-      >
+      <section style={{ background: BG_ALT, paddingTop: "6rem", paddingBottom: "6rem", position: "relative", overflow: "hidden" }}>
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-20%] left-[20%] w-[50vw] h-[50vw] rounded-full opacity-15"
-            style={{ background: "radial-gradient(circle, #00897B, transparent 70%)", filter: "blur(80px)" }} />
-          <div className="absolute bottom-[-20%] right-[20%] w-[40vw] h-[40vw] rounded-full opacity-10"
-            style={{ background: "radial-gradient(circle, #FF6B35, transparent 70%)", filter: "blur(80px)" }} />
+          <div className="absolute top-[-10%] left-[20%] w-[40vw] h-[40vw] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(0,137,123,0.08), transparent 70%)", filter: "blur(60px)" }} />
+          <div className="absolute bottom-[-10%] right-[20%] w-[30vw] h-[30vw] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(255,107,53,0.07), transparent 70%)", filter: "blur(60px)" }} />
         </div>
         <div className="container mx-auto px-4 relative text-center">
           <motion.div
@@ -493,24 +500,23 @@ export default function Home() {
             className="max-w-2xl mx-auto"
           >
             <h2
-              className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight"
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-5 leading-tight"
               style={{ fontFamily: "var(--app-font-serif)" }}
             >
               Pronto para criar com IA?
             </h2>
-            <p className="text-gray-400 mb-10 leading-relaxed" style={{ fontFamily: "Plus Jakarta Sans, var(--app-font-sans)" }}>
+            <p className="text-gray-400 mb-10 leading-relaxed">
               Comece agora, gratuitamente. Sem cartão de crédito, sem complicação.
             </p>
             <motion.button
-              whileHover={{ scale: 1.04, boxShadow: "0 0 50px rgba(0,196,167,0.4)" }}
+              whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(0,137,123,0.30)" }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setLocation("/registro")}
               className="inline-flex items-center gap-2 px-12 py-4 text-base font-semibold rounded-full text-white"
               style={{
                 background: "linear-gradient(135deg, #00897B 0%, #26C6B0 60%, #00897B 100%)",
                 backgroundSize: "200% 100%",
-                boxShadow: "0 0 40px rgba(0,137,123,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
-                fontFamily: "Plus Jakarta Sans, var(--app-font-sans)",
+                boxShadow: "0 0 32px rgba(0,137,123,0.28), inset 0 1px 0 rgba(255,255,255,0.15)",
               }}
             >
               Começar gratuitamente
