@@ -464,55 +464,88 @@ export default function VibeChatPanel({
         </div>
       )}
 
-      <div className="h-10 border-b border-white/10 flex items-center px-3 justify-between flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-sm font-mono font-medium text-foreground/90">Jadi IA</span>
-          {isAutoMode && stackDecision && (
-            <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full flex items-center gap-1 font-mono">
-              <Bot className="h-2.5 w-2.5" />
-              {stackDecision.framework}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {isAutoMode && hasAnalyzed && (
+      <div
+        className="flex-shrink-0 border-b border-white/10 px-4 py-3"
+        style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(10,10,20,0) 80%)" }}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(139,92,246,0.25)]">
+              <Zap className="h-4.5 w-4.5 text-primary" style={{ height: "1.1rem", width: "1.1rem" }} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground leading-none">Vibe Coding</span>
+                <span className="flex items-center gap-1 text-[10px] font-mono bg-green-500/15 text-green-400 border border-green-500/25 px-1.5 py-0.5 rounded-full">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                  ao vivo
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">
+                {isAutoMode && stackDecision
+                  ? `Stack: ${stackDecision.framework} · ${stackDecision.language}`
+                  : "Descreva, a IA constrói em tempo real"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
+            {isAutoMode && hasAnalyzed && (
+              <button
+                onClick={onReanalyze}
+                title="Trocar stack"
+                className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+            )}
             <button
-              onClick={onReanalyze}
-              title="Trocar stack"
-              className="h-6 w-6 flex items-center justify-center rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={onClose}
+              className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
             >
-              <RefreshCw className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </button>
-          )}
-          <button
-            onClick={onClose}
-            className="h-6 w-6 flex items-center justify-center rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          </div>
         </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth">
         {messages.length === 0 && !isAnalyzing && (
-          <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
-              <Zap className="h-6 w-6 text-primary" />
+          <div className="flex flex-col items-center justify-center h-full gap-5 px-2 py-8 text-center">
+            <div className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left"
+              style={{ boxShadow: "0 0 20px rgba(139,92,246,0.08) inset" }}
+            >
+              <p className="text-[11px] font-mono text-primary/80 mb-2 flex items-center gap-1.5">
+                <Zap className="h-3 w-3" />
+                Como usar
+              </p>
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                Digite sua ideia na <span className="text-foreground font-medium">caixa abaixo</span> e pressione{" "}
+                <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-white/10 border border-white/20 font-mono">Enter</kbd>.
+                O código vai aparecendo no editor enquanto a IA escreve.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3 w-3 text-yellow-400" /> cole textos longos → vira snippet
+                </span>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <Image className="h-3 w-3 text-blue-400" /> cole imagens → visão IA
+                </span>
+              </div>
             </div>
-            <p className="text-sm font-mono text-foreground/70 mb-1">Vibe Coding</p>
-            <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed">
-              Descreva o que quer construir. O código vai aparecendo no editor em tempo real.
-            </p>
-            <div className="mt-4 space-y-1">
-              {QUICK_COMMANDS.slice(0, 3).map((c) => (
+
+            <div className="w-full space-y-1">
+              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider text-left mb-2">
+                Comandos rápidos
+              </p>
+              {QUICK_COMMANDS.map((c) => (
                 <button
                   key={c.cmd}
                   onClick={() => applyCommand(c.cmd)}
-                  className="block w-full text-left px-3 py-1.5 rounded-lg text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                  className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all text-left group"
                 >
-                  <span className="text-primary">{c.cmd}</span>
-                  <span className="ml-2 text-muted-foreground/60">{c.desc}</span>
+                  <span className="text-primary group-hover:text-primary font-semibold min-w-[70px]">{c.cmd}</span>
+                  <span className="text-muted-foreground/70 group-hover:text-muted-foreground">{c.desc}</span>
                 </button>
               ))}
             </div>

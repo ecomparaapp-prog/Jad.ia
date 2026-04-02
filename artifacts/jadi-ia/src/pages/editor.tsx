@@ -335,21 +335,27 @@ export default function Editor() {
           variant="ghost"
           size="sm"
           onClick={handleGeneratePrompt}
-          className="h-7 text-xs gap-1"
+          className="h-7 text-xs gap-1 hidden sm:flex"
           data-testid="button-generate-prompt"
         >
           <Wand2 className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Gerar Prompt</span>
+          Gerar Prompt
         </Button>
         <Button
-          variant="ghost"
           size="sm"
           onClick={() => setShowChat(!showChat)}
-          className={`h-7 text-xs gap-1 ${showChat ? "bg-primary/10 text-primary" : ""}`}
           data-testid="button-toggle-chat"
+          className={`relative h-8 text-xs gap-1.5 px-3 transition-all duration-200 ${
+            showChat
+              ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(139,92,246,0.45)]"
+              : "bg-primary/90 text-primary-foreground hover:bg-primary hover:shadow-[0_0_14px_rgba(139,92,246,0.35)]"
+          }`}
         >
-          <Cpu className="h-3.5 w-3.5 text-primary" />
-          <span className="hidden sm:inline">IA</span>
+          {!showChat && (
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-green-400 border border-background animate-pulse" />
+          )}
+          <Cpu className="h-3.5 w-3.5" />
+          <span>Vibe Coding</span>
         </Button>
         <Button
           size="sm"
