@@ -82,6 +82,8 @@ interface VibeChatPanelProps {
   onReanalyze: () => void;
   vibeMode?: boolean;
   onFileWrite?: (filename: string, content: string) => void;
+  prefillInput?: string;
+  onPrefillConsumed?: () => void;
 }
 
 const QUICK_COMMANDS = [
@@ -123,21 +125,20 @@ Quando solicitado a criar um sistema, app ou projeto completo, siga SEMPRE este 
 ===END_FILE===
 
 REGRAS OBRIGATÓRIAS DE CÓDIGO:
-- Use apenas HTML, CSS e JavaScript puro (sem npm, sem frameworks externos)
 - Sempre crie um index.html como arquivo principal de entrada
 - Cada arquivo deve ser completo, funcional e bem estruturado
-- Use design moderno com cores escuras e acentos em teal/verde
-- Para CSS, use variáveis CSS e design responsivo
-- Para JS, use código limpo e comentado
 - Não use placeholders — escreva o código real e funcional
 
+PADRÕES OBRIGATÓRIOS DE TECNOLOGIA:
+- ESTILIZAÇÃO: Use Tailwind CSS via CDN como padrão. Inclua SEMPRE no <head>: <script src="https://cdn.tailwindcss.com"></script>. Evite criar arquivos style.css com CSS puro extensivo — prefira classes utilitárias do Tailwind.
+- ÍCONES: Use Lucide Icons via CDN como padrão. Inclua SEMPRE no <head>: <script src="https://unpkg.com/lucide@latest"></script> e ative com <script>lucide.createIcons();</script> no final do body. NUNCA use emojis no código — apenas ícones Lucide ou Iconify.
+- DESIGN: Layouts responsivos com Tailwind (grid, flex, container). Cores escuras modernas como padrão (bg-slate-900, bg-gray-900). Acentos em teal/emerald/violet.
+
 REGRAS OBRIGATÓRIAS DE ASSETS:
-- PROIBIDO usar emojis no código. Use exclusivamente ícones SVG da biblioteca Lucide (via CDN: https://unpkg.com/lucide@latest) ou Iconify (https://icon-sets.iconify.design/) em todos os botões, menus e ícones decorativos.
 - TIPOGRAFIA: Se o contexto incluir [ASSETS] com googleFontsUrl, SEMPRE injete o link do Google Fonts no <head> do HTML e aplique as variáveis CSS --font-heading e --font-body no :root e em h1,h2,h3,body.
-- IMAGENS: Se o contexto incluir [ASSETS] com URLs de imagens, use-as diretamente no código (como src de <img> ou background-image). Referencie como /public/assets/img/ no comentário mas use a URL real fornecida.
-- SONS: Se o contexto incluir [ASSETS] com URLs de som (preview MP3), use <audio> elements com src apontando para as URLs fornecidas. Coloque os sons em /public/assets/sounds/ nos comentários.
-- ORGANIZAÇÃO: Organize assets gerados em /public/assets/ (imagens em /public/assets/img/, sons em /public/assets/sounds/, fontes em /public/assets/fonts/).
-- Iconify CDN para ícones inline: <span class="iconify" data-icon="mdi:home"></span> com <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
+- IMAGENS: Se o contexto incluir [ASSETS] com URLs de imagens, use-as diretamente no código (como src de <img> ou background-image).
+- SONS: Se o contexto incluir [ASSETS] com URLs de som (preview MP3), use <audio> elements com src apontando para as URLs fornecidas.
+- Iconify CDN alternativo para ícones: <span class="iconify" data-icon="mdi:home"></span> com <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
 `;
 
 const OLIVE_GREEN = "#414833";
@@ -330,6 +331,8 @@ export default function VibeChatPanel({
   onReanalyze,
   vibeMode = false,
   onFileWrite,
+  prefillInput,
+  onPrefillConsumed,
 }: VibeChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -351,6 +354,17 @@ export default function VibeChatPanel({
   const statusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
   const processedFilesRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (prefillInput && prefillInput.trim()) {
+      setInput(prefillInput);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        autoResize();
+      }, 100);
+      onPrefillConsumed?.();
+    }
+  }, [prefillInput]);
 
   useEffect(() => {
     if (isStreaming) return;

@@ -7,6 +7,11 @@ import {
   FileCode,
   ExternalLink,
   Loader2,
+  Terminal,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 
 interface PreviewPanelProps {
@@ -17,6 +22,13 @@ interface PreviewPanelProps {
 }
 
 type PreviewStatus = "loading" | "live" | "error" | "no-html" | "no-project";
+
+interface ConsoleEntry {
+  id: string;
+  level: "error" | "warn" | "log";
+  message: string;
+  timestamp: string;
+}
 
 function buildPreviewUrl(projectId: number, token: string, revision: number): string {
   return `/api/projects/${projectId}/preview?token=${encodeURIComponent(token)}&t=${revision}`;
@@ -33,24 +45,40 @@ export default function PreviewPanel({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [localRevision, setLocalRevision] = useState(revisionId);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+  const [showConsole, setShowConsole] = useState(false);
 
   useEffect(() => {
     if (revisionId !== localRevision) {
       setLocalRevision(revisionId);
       setStatus("loading");
       setIsRefreshing(true);
+      setConsoleEntries([]);
     }
   }, [revisionId]);
+
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (!e.data || e.data.type !== "__jadia_console") return;
+      const entry: ConsoleEntry = {
+        id: Math.random().toString(36).slice(2),
+        level: e.data.level as "error" | "warn" | "log",
+        message: String(e.data.message),
+        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      };
+      setConsoleEntries((prev) => [...prev.slice(-49), entry]);
+      if (entry.level === "error") setShowConsole(true);
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const handleLoad = useCallback(() => {
     try {
       const doc = iframeRef.current?.contentDocument;
       if (doc && doc.body) {
         const bodyText = doc.body.innerText?.trim() ?? "";
-        if (
-          doc.title === "" &&
-          bodyText.startsWith("Token")
-        ) {
+        if (doc.title === "" && bodyText.startsWith("Token")) {
           setStatus("error");
           setErrorMsg("Token inválido — faça login novamente.");
         } else {
@@ -77,6 +105,7 @@ export default function PreviewPanel({
   function handleRefresh() {
     setStatus("loading");
     setIsRefreshing(true);
+    setConsoleEntries([]);
     setLocalRevision((r) => r + 1);
   }
 
@@ -84,6 +113,9 @@ export default function PreviewPanel({
     token && projectId
       ? buildPreviewUrl(projectId, token, localRevision)
       : null;
+
+  const errorCount = consoleEntries.filter((e) => e.level === "error").length;
+  const warnCount = consoleEntries.filter((e) => e.level === "warn").length;
 
   const StatusDot = () => {
     if (status === "loading") {
@@ -130,6 +162,24 @@ export default function PreviewPanel({
         </div>
 
         <div className="flex items-center gap-1">
+          {consoleEntries.length > 0 && (
+            <button
+              onClick={() => setShowConsole((v) => !v)}
+              className={`flex items-center gap-1 h-6 px-2 rounded text-[10px] font-mono transition-colors ${
+                errorCount > 0
+                  ? "text-red-400 hover:bg-red-500/10"
+                  : warnCount > 0
+                  ? "text-yellow-400 hover:bg-yellow-500/10"
+                  : "text-muted-foreground hover:bg-white/5"
+              }`}
+              title="Terminal de erros"
+            >
+              <Terminal className="h-3 w-3" />
+              {errorCount > 0 && <span className="text-red-400">{errorCount}e</span>}
+              {warnCount > 0 && <span className="text-yellow-400 ml-0.5">{warnCount}w</span>}
+              {showConsole ? <ChevronDown className="h-3 w-3 ml-0.5" /> : <ChevronUp className="h-3 w-3 ml-0.5" />}
+            </button>
+          )}
           {previewUrl && (
             <a
               href={previewUrl}
@@ -220,6 +270,59 @@ export default function PreviewPanel({
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {showConsole && consoleEntries.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 140, opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-shrink-0 border-t overflow-hidden"
+            style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.6)" }}
+          >
+            <div
+              className="flex items-center justify-between px-3 py-1 border-b"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}
+            >
+              <div className="flex items-center gap-1.5">
+                <Terminal className="h-3 w-3 text-muted-foreground/60" />
+                <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">Terminal</span>
+                {errorCount > 0 && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">{errorCount} erro{errorCount !== 1 ? "s" : ""}</span>
+                )}
+              </div>
+              <button
+                onClick={() => setConsoleEntries([])}
+                className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                title="Limpar terminal"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="overflow-y-auto h-[108px] p-1.5 space-y-0.5 font-mono">
+              {consoleEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`flex items-start gap-2 px-2 py-1 rounded text-[10px] ${
+                    entry.level === "error"
+                      ? "bg-red-500/8 text-red-300"
+                      : entry.level === "warn"
+                      ? "bg-yellow-500/8 text-yellow-300"
+                      : "text-muted-foreground/60"
+                  }`}
+                >
+                  {entry.level === "error" && <AlertCircle className="h-3 w-3 text-red-400 flex-shrink-0 mt-0.5" />}
+                  {entry.level === "warn" && <AlertTriangle className="h-3 w-3 text-yellow-400 flex-shrink-0 mt-0.5" />}
+                  {entry.level === "log" && <span className="h-3 w-3 flex-shrink-0 text-center text-[8px] text-muted-foreground/40 mt-0.5">›</span>}
+                  <span className="text-muted-foreground/30 flex-shrink-0">{entry.timestamp}</span>
+                  <span className="flex-1 break-all leading-relaxed">{entry.message}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {currentFileName && (
         <div

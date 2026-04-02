@@ -376,6 +376,13 @@ ${language && language !== "auto" ? `Linguagem principal: ${language}` : ""}`
 Você transforma planos em código real. Priorize código funcional e completo acima de tudo.
 Sempre use blocos de código com linguagem especificada (ex: \`\`\`javascript).
 Responda sempre em português do Brasil.
+
+PADRÕES OBRIGATÓRIOS DE TECNOLOGIA:
+- Use sempre Tailwind CSS (via CDN: <script src="https://cdn.tailwindcss.com"></script>) para estilização — evite CSS puro extensivo.
+- Use sempre Lucide Icons (via CDN: <script src="https://unpkg.com/lucide@latest"></script>) para ícones — nunca escreva SVGs manuais desnecessários.
+- Para projetos web simples (HTML/CSS/JS), inclua os CDNs no <head> automaticamente.
+- Prefira componentes semânticos e classes utilitárias. Evite estilos inline quando Tailwind resolve.
+
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
 ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}` : ""}`;
 

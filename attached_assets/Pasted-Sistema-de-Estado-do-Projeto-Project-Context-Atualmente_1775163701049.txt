@@ -1,0 +1,53 @@
+Sistema de "Estado" do Projeto (Project Context)
+Atualmente, cada prompt pode parecer um "recomeço". Para a Jad.ia ser inteligente, ela precisa de um arquivo de memória.
+
+A Sugestão: Criar um arquivo oculto chamado .jadia_context.json.
+
+Como funciona: Sempre que o Analista tomar uma decisão (ex: "usar fonte Montserrat" ou "paleta marrom"), ele salva nesse JSON.
+
+Ganho: Quando você pedir uma nova página, o Construtor lê esse arquivo e mantém a identidade visual sem você precisar repetir nada.
+
+2. Interface "Split-View" Real (IDE Style)
+Aquelas telas que rolam infinitamente matam a produtividade.
+
+A Sugestão: Implementar um layout de Painéis Ajustáveis (usando bibliotecas simples como react-resizable-panels ou apenas CSS Grid).
+
+O Ganho: Você terá o Chat na esquerda, o Código no meio e o Preview na direita. Se o código crescer, apenas a caixa dele terá scroll. A Jad.ia passa a ter "cara de software" e não de site de blog.
+
+3. "Sandboxing" de Preview (Segurança e Limpeza)
+Muitas vezes o código gerado "suja" o seu projeto principal ou trava a aba.
+
+A Sugestão: Forçar a Jad.ia a renderizar tudo dentro de um iframe com o atributo sandbox.
+
+O Ganho: Isso isola o projeto que está sendo criado da interface da Jad.ia. Se o projeto der erro, a Jad.ia continua funcionando para você mandar o comando de conserto.
+
+4. Biblioteca de "Shortcodes" para a IA
+Ensinar a IA comandos curtos para economizar tokens e tempo.
+
+A Sugestão: Criar um "Dicionário de Ativos" no sistema da Jad.ia.
+
+Como funciona: Em vez de a IA escrever todo o código de um botão toda vez, ela usa um componente padrão da Jad.ia (ex: <JadiaButton />).
+
+O Ganho: O código gerado fica 10x mais curto, mais rápido de escrever e menos propenso a erros de sintaxe.
+
+5. Histórico de Versões (Undo/Redo Visual)
+A Sugestão: Criar uma barra lateral com "Snapshots".
+
+Como funciona: Cada vez que o Construtor finalizar uma grande alteração, a Jad.ia salva uma cópia da pasta /dist.
+
+O Ganho: Se você pedir algo e não gostar, clica na versão anterior e a Jad.ia restaura o código instantaneamente.
+
+🛠️ Prompt para Aplicar a "Fundação Profissional" na Jad.ia
+Se quiser aplicar essas melhorias de uma vez, use este prompt no Replit Agent:
+
+"Transforme a estrutura da Jad.ia em uma Workspace profissional de Vibe Coding:
+
+Layout de Painéis: Reorganize a UI para que Chat, Editor e Preview ocupem 100% da viewport (100vh) em colunas fixas, sem scroll na página principal.
+
+Contexto Persistente: Crie uma lógica de backend que salve as decisões de design (cores, fontes, APIs chaves) em um arquivo .jadia_config. O Analista e o Construtor devem consultar esse arquivo antes de cada tarefa.
+
+Terminal de Erros: Adicione um pequeno painel de log abaixo do Chat que capture erros de console do Preview e os apresente de forma legível.
+
+Otimização de Prompt: Instrua o sistema para que o Construtor use sempre Tailwind CSS e Lucide Icons como padrão, evitando escrever CSS puro extensivo.
+
+Modo de Edição Direta: Permita que eu clique em uma linha de código no editor e peça uma alteração apenas para aquele trecho, em vez de reescrever o arquivo inteiro."

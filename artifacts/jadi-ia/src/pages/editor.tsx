@@ -106,6 +106,8 @@ export default function Editor() {
   const [showPreview, setShowPreview] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [previewRevision, setPreviewRevision] = useState(0);
+  const [selectedLine, setSelectedLine] = useState<number | null>(null);
+  const [pendingPrefill, setPendingPrefill] = useState<string>("");
 
   const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFileContentsRef = useRef<Record<string, string>>({});
@@ -138,7 +140,10 @@ export default function Editor() {
   }, [files, selectedFileId]);
 
   useEffect(() => {
-    if (currentFile) setEditingContent(currentFile.content);
+    if (currentFile) {
+      setEditingContent(currentFile.content);
+      setSelectedLine(null);
+    }
   }, [currentFile]);
 
   const isAutoMode = project?.language === "auto";
@@ -185,6 +190,32 @@ export default function Editor() {
       });
     }
   }, [showChat, isAutoMode, hasAnalyzed, project]);
+
+  useEffect(() => {
+    if (!stackDecision || !projectId || !token) return;
+    fetch(`/api/projects/${projectId}/context`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        language: stackDecision.language,
+        framework: stackDecision.framework,
+        projectType: stackDecision.projectType,
+        systemPrompt: stackDecision.systemPrompt,
+        savedAt: new Date().toISOString(),
+      }),
+    }).catch(() => {});
+  }, [stackDecision]);
+
+  function handleLineClick(lineNumber: number) {
+    setSelectedLine(lineNumber);
+    const lines = editingContent.split("\n");
+    const lineContent = lines[lineNumber - 1] ?? "";
+    const trimmed = lineContent.trim();
+    if (!trimmed) return;
+    const prefill = `[Linha ${lineNumber}]: \`${trimmed}\`\n\nEdite apenas esta linha: `;
+    setPendingPrefill(prefill);
+    if (!showChat) setShowChat(true);
+  }
 
   const updateFile = useUpdateProjectFile({
     mutation: {
@@ -531,7 +562,7 @@ export default function Editor() {
                   </div>
                 ) : (
                   <div className="p-1 space-y-0.5">
-                    {files?.map((file) => (
+                    {files?.filter((f) => f.name !== ".jadia_context").map((file) => (
                       <div
                         key={file.id}
                         className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer group transition-colors ${
@@ -668,6 +699,8 @@ export default function Editor() {
               onReanalyze={handleReanalyze}
               vibeMode={vibeMode}
               onFileWrite={handleFileWrite}
+              prefillInput={pendingPrefill}
+              onPrefillConsumed={() => setPendingPrefill("")}
             />
           )}
         </AnimatePresence>
@@ -678,7 +711,14 @@ export default function Editor() {
               <>
                 <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
                   {Array.from({ length: lineCount }, (_, i) => (
-                    <div key={i + 1}>{i + 1}</div>
+                    <div
+                      key={i + 1}
+                      title={`Clique para editar linha ${i + 1} com IA`}
+                      className={`cursor-pointer w-full text-right pr-0 transition-colors hover:text-primary hover:bg-primary/10 rounded-sm px-1 ${selectedLine === i + 1 ? "text-primary bg-primary/15" : ""}`}
+                      onClick={() => handleLineClick(i + 1)}
+                    >
+                      {i + 1}
+                    </div>
                   ))}
                 </div>
                 <textarea
