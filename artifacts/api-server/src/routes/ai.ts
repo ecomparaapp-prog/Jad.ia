@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { AiChatBody, GeneratePromptBody } from "@workspace/api-zod";
+import { AiChatBody, GeneratePromptBody, AnalyzeStackBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
 
@@ -55,17 +55,23 @@ router.post("/ai/chat", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const { messages, projectContext, language } = parsed.data;
+  const { messages, projectContext, language, systemPrompt } = parsed.data;
 
-  const systemMessage = {
-    role: "system",
-    content: `Você é Jadi, uma assistente de desenvolvimento de software inteligente integrada na plataforma Jadi.ia. 
+  const baseSystemContent = `Você é Jadi, uma assistente de desenvolvimento de software inteligente integrada na plataforma Jadi.ia. 
 Você ajuda desenvolvedores brasileiros a criar sites, sistemas, web apps e aplicativos mobile.
 Responda sempre em português do Brasil.
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
-${language ? `Linguagem principal do projeto: ${language}` : ""}
+${language && language !== "auto" ? `Linguagem principal do projeto: ${language}` : ""}
 Quando fornecer código, sempre use blocos de código com a linguagem especificada (ex: \`\`\`javascript).
-Seja concisa, direta e técnica. Explique apenas o necessário.`,
+Seja concisa, direta e técnica. Explique apenas o necessário.`;
+
+  const systemContent = systemPrompt
+    ? `${baseSystemContent}\n\n${systemPrompt}`
+    : baseSystemContent;
+
+  const systemMessage = {
+    role: "system",
+    content: systemContent,
   };
 
   try {
@@ -142,6 +148,76 @@ Responda em formato JSON: { "prompt": "...", "suggestions": ["...", "..."] }`,
   } catch (error) {
     logger.error({ error }, "Erro ao gerar prompt");
     res.status(500).json({ error: "Erro ao gerar prompt. Verifique se a chave GROQ_API_KEY está configurada." });
+  }
+});
+
+router.post("/ai/analyze-stack", requireAuth, async (req, res): Promise<void> => {
+  const parsed = AnalyzeStackBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { projectName, description, projectType } = parsed.data;
+
+  const systemMessage = {
+    role: "system",
+    content: `Você é o Agente Analista do Jadi.ia, especializado em arquitetura de software e seleção de tecnologias.
+Sua missão é analisar a descrição de um projeto e recomendar a stack tecnológica ideal.
+Responda SEMPRE em formato JSON válido, sem texto extra antes ou depois.
+Responda em português do Brasil.`,
+  };
+
+  const userMessage = {
+    role: "user",
+    content: `Analise o projeto abaixo e recomende a melhor stack tecnológica:
+
+Nome do projeto: ${projectName}
+Descrição: ${description}
+${projectType ? `Tipo de projeto (sugestão do usuário): ${projectType}` : ""}
+
+Responda com um JSON no seguinte formato:
+{
+  "language": "linguagem principal (ex: TypeScript, Python, JavaScript)",
+  "framework": "framework principal (ex: React, Django, Next.js, React Native)",
+  "projectType": "tipo de projeto identificado (ex: E-commerce, App Mobile, API REST, Dashboard, Landing Page)",
+  "justification": "Breve justificativa técnica de 1-2 frases explicando por que essa stack é ideal para este projeto",
+  "systemPrompt": "Instrução técnica completa para guiar a IA na geração de código. Deve especificar linguagem, framework, padrões de código, estrutura de pastas e boas práticas. Seja detalhado e técnico."
+}`,
+  };
+
+  try {
+    const responseText = await callGroq([systemMessage, userMessage], "llama3-70b-8192");
+
+    let stackData: {
+      language: string;
+      framework: string;
+      projectType: string;
+      justification: string;
+      systemPrompt: string;
+    };
+
+    try {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        stackData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Resposta sem JSON válido");
+      }
+    } catch {
+      stackData = {
+        language: "TypeScript",
+        framework: "React",
+        projectType: "Aplicação Web",
+        justification: "Stack moderna e versátil ideal para desenvolvimento web.",
+        systemPrompt: "Você é um especialista em desenvolvimento web com TypeScript e React. Gere código moderno, tipado e seguindo boas práticas.",
+      };
+    }
+
+    res.json(stackData);
+  } catch (error) {
+    logger.error({ error }, "Erro ao analisar stack");
+    res.status(500).json({ error: "Erro ao analisar stack. Verifique se a chave GROQ_API_KEY está configurada." });
   }
 });
 

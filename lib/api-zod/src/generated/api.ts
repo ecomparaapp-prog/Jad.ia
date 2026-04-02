@@ -268,6 +268,7 @@ export const AiChatBody = zod.object({
   ),
   projectContext: zod.string().nullish(),
   language: zod.string().nullish(),
+  systemPrompt: zod.string().nullish(),
 });
 
 export const AiChatResponse = zod.object({
@@ -287,6 +288,23 @@ export const GeneratePromptBody = zod.object({
 export const GeneratePromptResponse = zod.object({
   prompt: zod.string(),
   suggestions: zod.array(zod.string()),
+});
+
+/**
+ * @summary Agente Analista decide a melhor stack tecnológica para o projeto
+ */
+export const AnalyzeStackBody = zod.object({
+  projectName: zod.string(),
+  description: zod.string(),
+  projectType: zod.string().nullish(),
+});
+
+export const AnalyzeStackResponse = zod.object({
+  language: zod.string(),
+  framework: zod.string(),
+  projectType: zod.string(),
+  justification: zod.string(),
+  systemPrompt: zod.string(),
 });
 
 /**

@@ -13,4 +13,6 @@ export interface AiChatBody {
   projectContext?: string | null;
   /** @nullable */
   language?: string | null;
+  /** @nullable */
+  systemPrompt?: string | null;
 }

@@ -1,0 +1,35 @@
+Prompt de Lógica de Seleção de Linguagem
+"Implemente a lógica de Tomada de Decisão Tecnológica no motor do Jadi.ia. O sistema deve funcionar da seguinte forma:
+
+Entrada de Usuário: A interface deve ter um campo (Dropdown ou Tag) para 'Linguagem/Framework'. Se o usuário escolher (ex: Next.js, Python, PHP), a IA deve seguir essa escolha rigorosamente.
+
+Modo Autônomo: Se o usuário deixar o campo em branco ou selecionar 'Automático', o Agente Analista deve processar o prompt inicial e decidir qual a melhor stack para o projeto (ex: 'Para um e-commerce escalável, recomendo Node.js com TypeScript e banco de dados PostgreSQL').
+
+Justificativa Técnica: Antes de iniciar o código no modo autônomo, o Agente deve exibir uma breve mensagem: 'Identifiquei que seu projeto é [tipo de projeto]. Vou utilizar [Linguagem/Framework] por ser a melhor opção para [motivo].'
+
+Integração com a IA Principal: A decisão do Agente Analista deve ser enviada como o 'System Prompt' fixo para a IA Principal (Groq), garantindo que todo o código gerado a partir dali siga a linguagem escolhida.
+
+Flexibilidade: Garanta que o usuário possa 'Trocar a Linguagem' no meio da conversa, e a IA deve ser capaz de converter a lógica ou avisar sobre a necessidade de reiniciar o projeto."
+
+Como isso vai funcionar no seu "Jadi.ia":
+No código do seu app no Replit, a chamada para a API da Groq terá uma lógica parecida com esta:
+
+Python
+
+# Lógica simplificada que o Replit Agent vai montar:
+if not linguagem_selecionada:
+    # O Agente Analista decide primeiro
+    linguagem_escolhida = chamar_agente_analista(prompt_usuario) 
+else:
+    linguagem_escolhida = linguagem_selecionada
+
+# Agora a IA Principal recebe a ordem final
+gerar_projeto_completo(prompt_usuario, linguagem_escolhida)
+Por que isso é importante?
+Isso separa o Jadi.ia de um chat comum. Ele passa a se comportar como um consultor:
+
+Se você enviar um print de uma tela de login antiga e não disser nada, ele pode decidir: "Vou refazer isso em Tailwind CSS e React para ser moderno".
+
+Se você for um desenvolvedor experiente e exigir "Quero em Rust", ele respeita sua autoridade.
+
+Dica: Peça para o Replit Agent colocar um pequeno "ícone de robô" ao lado do nome da linguagem quando ela for escolhida automaticamente pela IA, para que você saiba que ela tomou aquela decisão por você.

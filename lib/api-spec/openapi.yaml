@@ -470,6 +470,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/GeneratePromptResponse"
 
+  /ai/analyze-stack:
+    post:
+      operationId: analyzeStack
+      tags: [ai]
+      summary: Agente Analista decide a melhor stack tecnológica para o projeto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeStackBody"
+      responses:
+        "200":
+          description: Decisão tecnológica do Agente Analista
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeStackResponse"
+        "500":
+          description: Erro na IA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # STATS
   /stats/dashboard:
     get:
@@ -748,8 +773,43 @@ components:
           type: ["string", "null"]
         language:
           type: ["string", "null"]
+        systemPrompt:
+          type: ["string", "null"]
       required:
         - messages
+
+    AnalyzeStackBody:
+      type: object
+      properties:
+        projectName:
+          type: string
+        description:
+          type: string
+        projectType:
+          type: ["string", "null"]
+      required:
+        - projectName
+        - description
+
+    AnalyzeStackResponse:
+      type: object
+      properties:
+        language:
+          type: string
+        framework:
+          type: string
+        projectType:
+          type: string
+        justification:
+          type: string
+        systemPrompt:
+          type: string
+      required:
+        - language
+        - framework
+        - projectType
+        - justification
+        - systemPrompt
 
     AiChatResponse:
       type: object

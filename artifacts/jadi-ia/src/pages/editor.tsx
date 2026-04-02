@@ -19,6 +19,7 @@ import {
   useDeleteProjectSecret,
   useAiChat,
   useGeneratePrompt,
+  useAnalyzeStack,
   getGetProjectQueryKey,
   getListProjectFilesQueryKey,
   getGetProjectFileQueryKey,
@@ -35,17 +36,27 @@ import {
   Cpu,
   Lock,
   GitBranch,
-  Eye,
   Code,
   FileText,
   Wand2,
   X,
+  Bot,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  isSystemDecision?: boolean;
+}
+
+interface StackDecision {
+  language: string;
+  framework: string;
+  projectType: string;
+  justification: string;
+  systemPrompt: string;
 }
 
 export default function Editor() {
@@ -66,6 +77,8 @@ export default function Editor() {
   const [showNewFile, setShowNewFile] = useState(false);
   const [newSecretKey, setNewSecretKey] = useState("");
   const [newSecretValue, setNewSecretValue] = useState("");
+  const [stackDecision, setStackDecision] = useState<StackDecision | null>(null);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const { data: project, isLoading: loadingProject } = useGetProject(projectId, {
@@ -102,6 +115,51 @@ export default function Editor() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  const isAutoMode = project?.language === "auto";
+
+  const analyzeStack = useAnalyzeStack({
+    mutation: {
+      onSuccess: (data) => {
+        const decision: StackDecision = {
+          language: data.language,
+          framework: data.framework,
+          projectType: data.projectType,
+          justification: data.justification,
+          systemPrompt: data.systemPrompt,
+        };
+        setStackDecision(decision);
+        setHasAnalyzed(true);
+        const justificationMsg: ChatMessage = {
+          role: "assistant",
+          content: `🤖 **Decisão do Agente Analista**\n\nIdentifiquei que seu projeto é **${data.projectType}**. Vou utilizar **${data.framework} (${data.language})** por ser a melhor opção para ${data.justification}\n\nPode me perguntar qualquer coisa sobre o desenvolvimento!`,
+          isSystemDecision: true,
+        };
+        setChatMessages((prev) => [...prev, justificationMsg]);
+      },
+      onError: () => {
+        setHasAnalyzed(true);
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Não consegui analisar a stack automaticamente. Por favor, me diga qual linguagem/framework você prefere usar.",
+          },
+        ]);
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (showChat && isAutoMode && !hasAnalyzed && project && !analyzeStack.isPending) {
+      analyzeStack.mutate({
+        data: {
+          projectName: project.name,
+          description: project.description ?? project.name,
+        },
+      });
+    }
+  }, [showChat, isAutoMode, hasAnalyzed, project]);
 
   const updateFile = useUpdateProjectFile({
     mutation: {
@@ -201,11 +259,12 @@ export default function Editor() {
 
   function handleCreateFile() {
     if (!newFileName.trim()) return;
+    const effectiveLanguage = stackDecision?.language ?? project?.language ?? "javascript";
     createFile.mutate({
       id: projectId,
       data: {
         name: newFileName,
-        language: project?.language ?? "javascript",
+        language: effectiveLanguage,
       },
     });
   }
@@ -215,26 +274,48 @@ export default function Editor() {
     const msg: ChatMessage = { role: "user", content: chatInput };
     setChatMessages((prev) => [...prev, msg]);
     setChatInput("");
+
+    const effectiveLanguage = isAutoMode
+      ? (stackDecision ? `${stackDecision.framework} (${stackDecision.language})` : "auto")
+      : project?.language;
+
+    const chatOnlyMessages = [...chatMessages, msg]
+      .filter((m) => !m.isSystemDecision)
+      .map(({ role, content }) => ({ role, content }));
+
     aiChat.mutate({
       data: {
-        messages: [...chatMessages, msg],
+        messages: chatOnlyMessages,
         projectContext: `Projeto: ${project?.name}, Arquivo: ${currentFile?.name}`,
-        language: project?.language,
+        language: effectiveLanguage,
+        systemPrompt: stackDecision?.systemPrompt ?? null,
       },
     });
   }
 
   function handleGeneratePrompt() {
     if (!project) return;
+    const effectiveLanguage = stackDecision?.language ?? (isAutoMode ? undefined : project.language);
     generatePrompt.mutate({
       data: {
         description: project.description ?? project.name,
-        projectType: "web app",
-        language: project.language,
+        projectType: stackDecision?.projectType ?? "web app",
+        language: effectiveLanguage,
       },
     });
     setShowChat(true);
   }
+
+  function handleReanalyzeStack() {
+    if (!project) return;
+    setStackDecision(null);
+    setHasAnalyzed(false);
+    setChatMessages([]);
+  }
+
+  const effectiveLangLabel = isAutoMode
+    ? (stackDecision ? `${stackDecision.framework}` : "Automático")
+    : project?.language ?? "";
 
   if (loadingProject) {
     return (
@@ -278,7 +359,10 @@ export default function Editor() {
         </Button>
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-semibold text-sm truncate">{project.name}</span>
-          <Badge variant="outline" className="text-xs capitalize flex-shrink-0">{project.language}</Badge>
+          <Badge variant="outline" className="text-xs capitalize flex-shrink-0 flex items-center gap-1">
+            {isAutoMode && <Bot className="h-3 w-3 text-primary" />}
+            {effectiveLangLabel}
+          </Badge>
         </div>
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={handleGeneratePrompt} className="h-7 text-xs gap-1" data-testid="button-generate-prompt">
@@ -530,26 +614,56 @@ export default function Editor() {
                   <div className="flex items-center gap-2">
                     <Cpu className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">Jadi IA</span>
+                    {isAutoMode && stackDecision && (
+                      <Badge variant="secondary" className="text-xs flex items-center gap-1 h-5">
+                        <Bot className="h-3 w-3" />
+                        {stackDecision.framework}
+                      </Badge>
+                    )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setShowChat(false)}
-                    data-testid="button-close-chat"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {isAutoMode && hasAnalyzed && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={handleReanalyzeStack}
+                        title="Trocar linguagem"
+                        data-testid="button-reanalyze-stack"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setShowChat(false)}
+                      data-testid="button-close-chat"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
 
                 <ScrollArea className="flex-1 p-3">
-                  {chatMessages.length === 0 && (
+                  {chatMessages.length === 0 && !analyzeStack.isPending && (
                     <div className="text-center py-8">
                       <Cpu className="h-10 w-10 mx-auto text-primary/30 mb-3" />
                       <p className="text-xs text-muted-foreground">
-                        Olá! Sou a Jadi, sua assistente de desenvolvimento.
-                        Pergunte sobre código, peça sugestões ou gere um projeto.
+                        {isAutoMode
+                          ? "O Agente Analista está avaliando seu projeto para escolher a melhor stack..."
+                          : "Olá! Sou a Jadi, sua assistente de desenvolvimento. Pergunte sobre código, peça sugestões ou gere um projeto."}
                       </p>
+                    </div>
+                  )}
+                  {analyzeStack.isPending && chatMessages.length === 0 && (
+                    <div className="flex flex-col items-center py-8 gap-3">
+                      <Bot className="h-10 w-10 text-primary/50 animate-pulse" />
+                      <div className="text-center">
+                        <p className="text-xs font-medium text-foreground mb-1">Agente Analista trabalhando...</p>
+                        <p className="text-xs text-muted-foreground">Analisando seu projeto e selecionando a melhor stack tecnológica</p>
+                      </div>
                     </div>
                   )}
                   {chatMessages.map((msg, i) => (
@@ -561,7 +675,9 @@ export default function Editor() {
                         className={`max-w-[90%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground"
+                            : msg.isSystemDecision
+                              ? "bg-primary/10 border border-primary/20 text-foreground"
+                              : "bg-muted text-foreground"
                         }`}
                         data-testid={`chat-message-${i}`}
                       >
@@ -579,20 +695,33 @@ export default function Editor() {
                   <div ref={chatEndRef} />
                 </ScrollArea>
 
+                {isAutoMode && hasAnalyzed && stackDecision && (
+                  <div className="px-3 pb-1 flex-shrink-0">
+                    <button
+                      onClick={handleReanalyzeStack}
+                      className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1 flex items-center justify-center gap-1.5 border border-dashed border-border rounded-md hover:border-primary/40"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Trocar linguagem / re-analisar projeto
+                    </button>
+                  </div>
+                )}
+
                 <div className="border-t border-border p-2 flex gap-2 flex-shrink-0">
                   <Input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Pergunte algo..."
+                    placeholder={analyzeStack.isPending ? "Aguarde a análise..." : "Pergunte algo..."}
                     className="h-8 text-xs"
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendChat()}
+                    disabled={analyzeStack.isPending}
                     data-testid="input-chat"
                   />
                   <Button
                     size="icon"
                     className="h-8 w-8 flex-shrink-0"
                     onClick={handleSendChat}
-                    disabled={aiChat.isPending || !chatInput.trim()}
+                    disabled={aiChat.isPending || analyzeStack.isPending || !chatInput.trim()}
                     data-testid="button-send-chat"
                   >
                     <Send className="h-3.5 w-3.5" />

@@ -115,6 +115,23 @@ export interface AiChatBody {
   projectContext?: string | null;
   /** @nullable */
   language?: string | null;
+  /** @nullable */
+  systemPrompt?: string | null;
+}
+
+export interface AnalyzeStackBody {
+  projectName: string;
+  description: string;
+  /** @nullable */
+  projectType?: string | null;
+}
+
+export interface AnalyzeStackResponse {
+  language: string;
+  framework: string;
+  projectType: string;
+  justification: string;
+  systemPrompt: string;
 }
 
 export interface AiChatResponse {

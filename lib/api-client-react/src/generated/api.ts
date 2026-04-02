@@ -20,6 +20,8 @@ import type {
   ActivityItem,
   AiChatBody,
   AiChatResponse,
+  AnalyzeStackBody,
+  AnalyzeStackResponse,
   AuthResponse,
   CreateFileBody,
   CreateProjectBody,
@@ -1727,6 +1729,92 @@ export const useGeneratePrompt = <
   TContext
 > => {
   return useMutation(getGeneratePromptMutationOptions(options));
+};
+
+/**
+ * @summary Agente Analista decide a melhor stack tecnológica para o projeto
+ */
+export const getAnalyzeStackUrl = () => {
+  return `/api/ai/analyze-stack`;
+};
+
+export const analyzeStack = async (
+  analyzeStackBody: AnalyzeStackBody,
+  options?: RequestInit,
+): Promise<AnalyzeStackResponse> => {
+  return customFetch<AnalyzeStackResponse>(getAnalyzeStackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeStackBody),
+  });
+};
+
+export const getAnalyzeStackMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeStack>>,
+    TError,
+    { data: BodyType<AnalyzeStackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeStack>>,
+  TError,
+  { data: BodyType<AnalyzeStackBody> },
+  TContext
+> => {
+  const mutationKey = ["analyzeStack"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeStack>>,
+    { data: BodyType<AnalyzeStackBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return analyzeStack(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeStackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeStack>>
+>;
+export type AnalyzeStackMutationBody = BodyType<AnalyzeStackBody>;
+export type AnalyzeStackMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Agente Analista decide a melhor stack tecnológica para o projeto
+ */
+export const useAnalyzeStack = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeStack>>,
+    TError,
+    { data: BodyType<AnalyzeStackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeStack>>,
+  TError,
+  { data: BodyType<AnalyzeStackBody> },
+  TContext
+> => {
+  return useMutation(getAnalyzeStackMutationOptions(options));
 };
 
 /**

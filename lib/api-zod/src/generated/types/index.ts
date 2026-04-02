@@ -10,6 +10,8 @@ export * from "./activityItem";
 export * from "./aiChatBody";
 export * from "./aiChatResponse";
 export * from "./aiMessage";
+export * from "./analyzeStackBody";
+export * from "./analyzeStackResponse";
 export * from "./authResponse";
 export * from "./createFileBody";
 export * from "./createProjectBody";

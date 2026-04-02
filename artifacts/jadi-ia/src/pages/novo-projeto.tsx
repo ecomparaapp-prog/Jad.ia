@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCreateProject, getListProjectsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Bot, Plus } from "lucide-react";
 
 const LANGUAGES = [
   { id: "javascript", label: "JavaScript", color: "#f7df1e", desc: "Web interativo e dinâmico" },
@@ -28,7 +28,7 @@ const LANGUAGES = [
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(50, "Máximo 50 caracteres"),
   description: z.string().max(200, "Máximo 200 caracteres").optional(),
-  language: z.string().min(1, "Selecione uma linguagem"),
+  language: z.string().min(1, "Selecione uma linguagem ou deixe como Automático"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -40,7 +40,7 @@ export default function NovoProjeto() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: "", description: "", language: "" },
+    defaultValues: { name: "", description: "", language: "auto" },
   });
 
   const selectedLanguage = form.watch("language");
@@ -130,6 +130,27 @@ export default function NovoProjeto() {
                     <FormItem>
                       <FormLabel>Linguagem / Framework</FormLabel>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => field.onChange("auto")}
+                          data-testid="lang-option-auto"
+                          className={`p-3 rounded-lg border text-left transition-all col-span-2 sm:col-span-3 ${
+                            selectedLanguage === "auto"
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-primary/50 bg-card"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Bot className={`h-4 w-4 ${selectedLanguage === "auto" ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className="text-sm font-medium">Automático</span>
+                            <span className="text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-medium ml-auto">
+                              Recomendado
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            O Agente Analista escolhe a melhor stack baseada na sua descrição
+                          </p>
+                        </button>
                         {LANGUAGES.map((lang) => (
                           <button
                             key={lang.id}
