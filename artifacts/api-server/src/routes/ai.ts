@@ -7,7 +7,7 @@ const router: IRouter = Router();
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-async function callGroq(messages: { role: string; content: string }[], model = "llama3-70b-8192"): Promise<string> {
+async function callGroq(messages: { role: string; content: string }[], model = "llama-3.3-70b-versatile"): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error("GROQ_API_KEY não configurada");
@@ -187,7 +187,7 @@ Responda com um JSON no seguinte formato:
   };
 
   try {
-    const responseText = await callGroq([systemMessage, userMessage], "llama3-70b-8192");
+    const responseText = await callGroq([systemMessage, userMessage], "llama-3.3-70b-versatile");
 
     let stackData: {
       language: string;
