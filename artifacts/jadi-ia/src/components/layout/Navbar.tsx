@@ -22,56 +22,37 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 pt-3 pb-2">
         <div
-          className="rounded-[2rem] px-5 h-16 flex items-center justify-between"
-          style={{
-            background: theme === 'dark' ? 'rgba(240,240,245,0.07)' : 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: theme === 'dark' ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.08)',
-            boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.08)',
-          }}
+          className="glass-heavy rounded-[2rem] px-5 h-14 flex items-center justify-between"
+          style={{ borderRadius: '2rem' }}
         >
-          {/* Logo esquerda */}
-          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 group">
             <div
-              className="h-8 w-8 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105 rounded-xl overflow-hidden"
-              style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}
+              className="glass-card-sm h-9 w-9 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+              style={{ borderRadius: '0.875rem' }}
             >
               <img
                 src={theme === 'dark' ? logoBranca : logo}
                 alt="Jad.ia Logo"
-                className="h-5 w-5 object-contain"
+                className="h-6 w-6 object-contain"
               />
             </div>
-          </Link>
-
-          {/* Centro: nome + tagline */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-none pointer-events-none select-none">
             <span
-              className="font-extrabold tracking-tight"
-              style={{
-                fontFamily: 'var(--app-font-serif)',
-                fontSize: '1.35rem',
-                color: '#22c55e',
-                lineHeight: 1.1,
-              }}
+              className="font-bold text-base tracking-tight hidden sm:block"
+              style={{ fontFamily: 'var(--app-font-serif)' }}
             >
               Jad.ia
             </span>
-            <span
-              className="text-[10px] font-semibold tracking-wide mt-0.5"
-              style={{ color: '#f97316' }}
-            >
-              Sua IA de Vibe Coding
-            </span>
-          </div>
+          </Link>
 
-          {/* Direita: tema + usuário */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+
+            {/* Theme Toggle */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="h-9 w-9 flex items-center justify-center rounded-xl transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-foreground"
+                  className="btn-icon h-9 w-9 text-foreground"
                   data-testid="theme-toggle"
                 >
                   <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -96,7 +77,8 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                    className="btn-glass flex items-center gap-2 px-3 py-1.5 text-sm font-medium"
+                    style={{ padding: '0.375rem 0.75rem' }}
                     data-testid="user-menu-trigger"
                   >
                     <div
@@ -137,7 +119,7 @@ export function Navbar() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setLocation('/login')}
-                  className="px-4 py-2 text-sm rounded-xl font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                  className="btn-glass px-5 py-2 text-sm"
                   data-testid="link-login"
                 >
                   Entrar
