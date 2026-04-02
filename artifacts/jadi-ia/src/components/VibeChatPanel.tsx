@@ -152,6 +152,15 @@ function stripVibeMarkers(content: string): string {
     .trim();
 }
 
+function stripCodeFences(content: string): string {
+  const trimmed = content.trim();
+  const fullMatch = trimmed.match(/^```[\w]*\n([\s\S]*?)```\s*$/);
+  if (fullMatch) return fullMatch[1];
+  return trimmed
+    .replace(/^```[\w]*\n?/, "")
+    .replace(/\n?```\s*$/, "");
+}
+
 function CodeBlock({ content, lang }: { content: string; lang: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -430,7 +439,7 @@ export default function VibeChatPanel({
       if (!processedFilesRef.current.has(filename)) {
         processedFilesRef.current.add(filename);
         newlyCompleted.push(filename);
-        onFileWrite(filename, content);
+        onFileWrite(filename, stripCodeFences(content));
       }
     }
 
@@ -462,7 +471,8 @@ export default function VibeChatPanel({
           const endMarkerPos = afterContent.indexOf("===END_FILE===");
           const currentContent = endMarkerPos >= 0 ? afterContent.slice(0, endMarkerPos) : afterContent;
           const ext = filename.split(".").pop() || "";
-          onLiveCodeUpdate(currentContent.replace(/^\n/, ""), ext);
+          const cleanContent = stripCodeFences(currentContent.replace(/^\n/, ""));
+          onLiveCodeUpdate(cleanContent, ext);
 
           setVibeFiles((prev) => {
             if (!prev.find((f) => f.name === filename)) return [...prev, { name: filename, status: "writing" }];
