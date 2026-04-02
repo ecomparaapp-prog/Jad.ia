@@ -1,0 +1,50 @@
+Prompt Técnico: Especialização de Agentes com UI/UX Premium
+"Reconfigure a Dualidade de Agentes no Jadi.ia com foco em uma interface profissional, substituindo emojis por iconografia técnica e garantindo botões de alta usabilidade.
+
+1. Identidade Visual e Iconografia (Sem Emojis):
+
+Agente Analista (O Cérebro):
+
+Ícone: Use um ícone de 'Lupa' ou 'Brain' (SVG ou biblioteca Lucide).
+
+Cor: Verde Oliva (65, 72, 51).
+
+Estilo: Card com borda sutil na cor verde e cabeçalho escrito: SISTEMA ANALISTA.
+
+Agente Construtor (O Executor):
+
+Ícone: Use um ícone de 'Terminal' ou 'Code' (</>).
+
+Cor: Marrom Terracota (88, 47, 14).
+
+Estilo: Card com borda sutil na cor marrom e cabeçalho escrito: SISTEMA CONSTRUTOR.
+
+2. Engenharia de Botões (Botoes Grandes e Táteis):
+
+Implemente botões de ação proeminentes no rodapé do chat, seguindo o Design System Neuromórfico (Soft 3D) das nossas referências.
+
+Botão 'Solicitar Análise': Grande, com ícone de lupa à esquerda, fundo bege claro e texto em verde oliva. Deve ocupar 50% da largura do input.
+
+Botão 'Iniciar Vibe Coding': Grande, com ícone de terminal, fundo verde oliva e texto em bege (alto contraste). Deve ocupar 50% da largura.
+
+Feedback Visual: Ao passar o mouse (hover), os botões devem ter uma leve elevação ou mudança de sombra, indicando que são clicáveis.
+
+3. Fluxo de Trabalho e APIs:
+
+Analista (Gemini API): Gera o diagnóstico e o plano técnico. A resposta deve ser formatada em listas técnicas limpas, sem linguagem informal.
+
+Construtor (Groq API): Executa o plano e escreve os arquivos físicos no Replit.
+
+4. UX de Mensagens:
+
+As mensagens devem ser separadas por blocos claros. O texto do Analista deve usar uma fonte sem serifa moderna, enquanto o código do Construtor deve usar uma fonte monoespaçada dentro de um container de código elegante com botão de 'Copiar'."
+
+Por que essa mudança é importante:
+Profissionalismo: Emojis podem parecer amadores em uma ferramenta de desenvolvimento. Ícones vetoriais (SVGs) dão um ar de software corporativo/SaaS.
+
+Acessibilidade: Botões grandes são melhores para clicar e dão uma hierarquia visual clara — o usuário sabe exatamente onde clicar para "Analizar" ou "Construir".
+
+Consistência: Isso mantém o Jadi.ia alinhado com as referências de UI que você enviou (como a imagem do Vision Pro), onde os elementos têm peso e profundidade.
+
+Dica para o Replit Agent:
+Peça para ele: "Utilize a biblioteca lucide-react para os ícones e garanta que os botões tenham um padding generoso de pelo menos 16px para garantir a facilidade de clique."

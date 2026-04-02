@@ -1,0 +1,50 @@
+Prompt Técnico: Motor de Alternância Automática de APIs
+"Implemente o Gerenciador de Provedores de IA (AI Provider Orchestrator) no backend do Jadi.ia. O objetivo é alternar entre APIs automaticamente com base na função do agente.
+
+1. Configuração de Client-Switching:
+Crie uma lógica (em Python ou Node.js) que inicialize os clientes das APIs de forma independente:
+
+Client A (Analista): Usa GEMINI_API_KEY (Modelo Gemini 1.5 Flash).
+
+Client B (Construtor): Usa GROQ_API_KEY (Modelo Qwen 2.5 Coder ou Llama 3).
+
+2. Roteamento de Requisição:
+Implemente uma função dispatch_task(task_type, prompt) que funcione assim:
+
+Se task_type == 'analise', envie o prompt automaticamente para o Client A.
+
+Se task_type == 'construcao', envie o prompt automaticamente para o Client B.
+
+3. Botões de UI Vinculados:
+Vincule os botões grandes da interface a estas rotas específicas:
+
+O botão 'Solicitar Análise' deve disparar apenas a função do Analista.
+
+O botão 'Iniciar Vibe Coding' deve enviar o contexto aprovado pelo Analista diretamente para o Construtor.
+
+4. Sistema de Resiliência (Fallback):
+Se o Client B (Groq) retornar um erro (Ex: 429 - Too Many Requests), o sistema deve automaticamente tentar enviar a tarefa de construção para o Client A (Gemini) ou para um Client C (Mistral), notificando o usuário silenciosamente no log: 'Alternando provedor por estabilidade...'.
+
+5. Centralização de Contexto:
+Garanta que o histórico da conversa seja compartilhado entre os provedores, para que o Construtor saiba exatamente o que o Analista sugeriu sem que o usuário precise repetir."
+
+Como isso vai aparecer no seu código (Exemplo Lógico):
+O Replit Agent vai criar algo parecido com isto no seu servidor:
+
+JavaScript
+
+async function handleUserInput(userInput, type) {
+  if (type === 'ANALISE') {
+    const response = await callGemini(userInput); // Usa a chave do Gemini
+    return updateUI(response, 'ANALISTA_THEME');
+  } else if (type === 'CONSTRUCAO') {
+    const response = await callGroq(userInput); // Usa a chave da Groq
+    return updateUI(response, 'CONSTRUTOR_THEME');
+  }
+}
+O que você ganha com isso?
+Velocidade: O Construtor na Groq responde quase instantaneamente.
+
+Inteligência: O Analista no Gemini entende projetos complexos e arquivos longos.
+
+Experiência de Usuário: O usuário apenas clica nos botões grandes e o Jadi.ia faz a mágica por trás das câmeras.
