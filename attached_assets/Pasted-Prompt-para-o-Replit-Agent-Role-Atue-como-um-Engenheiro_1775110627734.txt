@@ -1,0 +1,56 @@
+Prompt para o Replit Agent
+Role: Atue como um Engenheiro de Front-end Sênior e Especialista em UI/UX.
+Objetivo: Implementar a identidade visual completa da jadi.ia, uma IA de alta performance, utilizando uma estética de "Spatial Design" e "Glassmorphism" (estilo Apple Vision Pro).
+
+1. Fundamentos da Identidade Visual (jadi.ia)
+Aplique estas regras globais de CSS/Tailwind em todo o sistema:
+
+Cores: * Background Principal: Off-white suave (#F2F2F2).
+
+Accent 1 (Primário): Gradiente Forest Green (de #004D40 para #00897B).
+
+Accent 2 (Secundário): Gradiente Sunset Orange (de #FF8C00 para #FFA726).
+
+Superfícies: Branco translúcido com backdrop-filter: blur(20px) e bordas de 1px solid rgba(255,255,255,0.2).
+
+Tipografia: * Títulos: Use uma fonte Serifada moderna e elegante (ex: Playfair Display ou similar via Google Fonts).
+
+Interface/Corpo: Use uma Sans-Serif geométrica e limpa (ex: Inter ou Plus Jakarta Sans).
+
+Bordas: Raio de curvatura alto em todos os cards (rounded-[40px]) e botões estilo pílula (rounded-full).
+
+2. Regras Estritas de Componentes
+Ícones vs Emojis: PROIBIDO o uso de emojis. Utilize exclusivamente a biblioteca Lucide-React ou Phosphor Icons. Os ícones devem ser lineares (outline), com espessura de 1.5px ou 2px.
+
+Logos de Linguagens: Sempre que mencionar uma linguagem de programação (Python, JavaScript, React, etc.), não use texto puro ou ícones genéricos. Use as Logos Oficiais em SVG (busque via Simple Icons ou similar).
+
+Botões: Implemente o estilo "Pill-shape". Botões primários devem ter o gradiente Forest Green com um leve "glow" (shadow colorido). Botões secundários devem ser "Glass" (vidro translúcido).
+
+Navegação: Siga o modelo de barra lateral (Sidebar) expansível:
+
+Recolhida: Botões quadrados muito arredondados com efeito neomórfico sutil.
+
+Expandida: Itens em formato de pílula com hierarquia visual clara.
+
+3. Instrução de Implementação
+Refatore as páginas existentes para que sigam este padrão. Certifique-se de que a profundidade visual (eixo Z) seja respeitada: elementos flutuando com sombras difusas e suaves, nunca sombras pretas pesadas. A interface da jadi.ia deve parecer leve, orgânica e tátil.
+
+📚 Referência Técnica para a IA (Para anexar ou enviar junto)
+Para garantir que a IA entenda a "física" do que você quer, você pode adicionar este bloco técnico:
+
+Technical Specs Reference:
+
+Glass Effect: background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.3);
+
+Elevation Shadow: box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+
+Active State: Use o gradiente Forest Green para indicar o foco da IA jadi.ia.
+
+Dica de Ouro:
+Se o Replit pedir bibliotecas, sugira instalar:
+
+lucide-react (para os ícones).
+
+framer-motion (para as animações suaves de "flutuar" que esse design pede).
+
+clsx e tailwind-merge (para gerenciar as classes de vidro)

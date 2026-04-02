@@ -38,16 +38,16 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const LANGUAGE_COLORS: Record<string, string> = {
-  javascript: "#b87333",
-  typescript: "#5a7a40",
-  python: "#7a5c30",
-  html: "#8c4a1a",
-  css: "#4a6b3a",
-  react: "#6b8c52",
-  vue: "#58752e",
-  "node.js": "#4a6b25",
-  "next.js": "#583010",
-  "react native": "#6b8c52",
+  javascript: "#F7DF1E",
+  typescript: "#3178C6",
+  python: "#3776AB",
+  html: "#E34F26",
+  css: "#1572B6",
+  react: "#61DAFB",
+  vue: "#42B883",
+  "node.js": "#339933",
+  "next.js": "#888888",
+  "react native": "#61DAFB",
 };
 
 export default function Dashboard() {
@@ -78,114 +78,147 @@ export default function Dashboard() {
     <div className="flex-1 flex flex-col">
 
       {/* Header */}
-      <div className="border-b border-border/50" style={{ background: "hsl(var(--sidebar))" }}>
-        <div className="container mx-auto px-4 py-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold flex items-center gap-2 font-mono">
-                <LayoutDashboard className="h-5 w-5 text-primary" />
-                Dashboard
-              </h1>
-              <p className="text-muted-foreground text-sm mt-0.5">
-                Bem-vindo, <span className="font-medium text-foreground">{user?.name}</span>
-              </p>
-            </div>
-            <button
-              onClick={() => setLocation("/projetos/novo")}
-              className="neu-btn inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground"
-              data-testid="button-new-project"
+      <div className="container mx-auto px-4 pt-8 pb-4">
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-card-md px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div>
+            <h1
+              className="text-2xl font-bold flex items-center gap-2.5"
+              style={{ fontFamily: 'var(--app-font-serif)' }}
             >
-              <Plus className="h-4 w-4" />
-              Novo Projeto
-            </button>
+              <div
+                className="h-9 w-9 rounded-2xl flex items-center justify-center text-white flex-shrink-0"
+                style={{ background: 'var(--gradient-primary)', boxShadow: 'var(--gradient-primary-glow)' }}
+              >
+                <LayoutDashboard className="h-4.5 w-4.5" strokeWidth={1.5} />
+              </div>
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1.5 ml-0.5">
+              Bem-vindo, <span className="font-semibold text-foreground">{user?.name}</span>
+            </p>
           </div>
-        </div>
+          <button
+            onClick={() => setLocation("/projetos/novo")}
+            className="btn-primary px-6 py-2.5 text-sm"
+            data-testid="button-new-project"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} />
+            Novo Projeto
+          </button>
+        </motion.div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-6 space-y-8">
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {loadingStats ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
+              <Skeleton key={i} className="h-28 rounded-[2rem]" />
             ))
           ) : (
             <>
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <div className="neu-card p-5" data-testid="stat-total-projects">
-                  <div className="flex items-center gap-4">
-                    <div className="neu-card-sm h-12 w-12 flex items-center justify-center flex-shrink-0">
-                      <Folder className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">Total de Projetos</p>
-                      <p className="text-3xl font-bold mt-0.5">{stats?.totalProjects ?? 0}</p>
+              {[
+                {
+                  icon: Folder,
+                  label: "Total de Projetos",
+                  value: stats?.totalProjects ?? 0,
+                  gradient: 'var(--gradient-primary)',
+                  glow: 'var(--gradient-primary-glow)',
+                  delay: 0.1,
+                  testId: "stat-total-projects",
+                },
+                {
+                  icon: Code2,
+                  label: "Total de Arquivos",
+                  value: stats?.totalFiles ?? 0,
+                  gradient: 'var(--gradient-secondary)',
+                  glow: 'var(--gradient-secondary-glow)',
+                  delay: 0.2,
+                  testId: "stat-total-files",
+                },
+                {
+                  icon: Activity,
+                  label: "Projetos Recentes",
+                  value: stats?.recentProjectsCount ?? 0,
+                  gradient: 'linear-gradient(135deg, #1565C0 0%, #42A5F5 100%)',
+                  glow: '0 8px 32px rgba(66,165,245,0.30)',
+                  delay: 0.3,
+                  testId: "stat-recent-projects",
+                },
+              ].map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: stat.delay, ease: [0.16, 1, 0.3, 1] }}
+                  data-testid={stat.testId}
+                >
+                  <div className="glass-card p-6 float-card">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="h-13 w-13 rounded-2xl flex items-center justify-center flex-shrink-0 text-white"
+                        style={{ background: stat.gradient, boxShadow: stat.glow, height: '3.25rem', width: '3.25rem' }}
+                      >
+                        <stat.icon className="h-5 w-5" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1" style={{ fontFamily: 'var(--app-font-mono)', fontSize: '0.7rem' }}>
+                          {stat.label}
+                        </p>
+                        <p className="text-4xl font-bold" style={{ fontFamily: 'var(--app-font-serif)' }}>
+                          {stat.value}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <div className="neu-card p-5" data-testid="stat-total-files">
-                  <div className="flex items-center gap-4">
-                    <div className="neu-card-sm h-12 w-12 flex items-center justify-center flex-shrink-0">
-                      <Code2 className="h-5 w-5" style={{ color: "hsl(74 40% 40%)" }} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">Total de Arquivos</p>
-                      <p className="text-3xl font-bold mt-0.5">{stats?.totalFiles ?? 0}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <div className="neu-card p-5" data-testid="stat-recent-projects">
-                  <div className="flex items-center gap-4">
-                    <div className="neu-card-sm h-12 w-12 flex items-center justify-center flex-shrink-0">
-                      <Activity className="h-5 w-5" style={{ color: "hsl(34 60% 40%)" }} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">Projetos Recentes</p>
-                      <p className="text-3xl font-bold mt-0.5">{stats?.recentProjectsCount ?? 0}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              ))}
             </>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Projects list */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold font-mono">Meus Projetos</h2>
-              <span className="text-xs text-muted-foreground font-mono">{projects?.length ?? 0} projetos</span>
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-base font-semibold" style={{ fontFamily: 'var(--app-font-serif)' }}>Meus Projetos</h2>
+              <span className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+                {projects?.length ?? 0} projetos
+              </span>
             </div>
 
             {loadingProjects ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 rounded-2xl" />
+                  <Skeleton key={i} className="h-20 rounded-[1.5rem]" />
                 ))}
               </div>
             ) : projects?.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="neu-inset p-14 text-center"
+                className="glass-card p-16 text-center"
               >
-                <Folder className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-                <p className="text-muted-foreground text-sm mb-5">Nenhum projeto ainda</p>
+                <div
+                  className="h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white"
+                  style={{ background: 'var(--gradient-primary)', boxShadow: 'var(--gradient-primary-glow)' }}
+                >
+                  <Folder className="h-6 w-6" strokeWidth={1.5} />
+                </div>
+                <p className="text-muted-foreground text-sm mb-6">Nenhum projeto ainda</p>
                 <button
                   onClick={() => setLocation("/projetos/novo")}
-                  className="neu-btn inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-primary text-primary-foreground"
+                  className="btn-primary px-6 py-2.5 text-sm"
                   data-testid="button-create-first-project"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" strokeWidth={2} />
                   Criar primeiro projeto
                 </button>
               </motion.div>
@@ -195,23 +228,27 @@ export default function Dashboard() {
                   {projects?.map((project, i) => (
                     <motion.div
                       key={project.id}
-                      initial={{ opacity: 0, x: -10 }}
+                      initial={{ opacity: 0, x: -14 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
+                      transition={{ delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <div
-                        className="neu-card p-4 cursor-pointer hover:translate-y-[-1px] transition-transform duration-150 group"
+                        className="glass-card-md p-4 cursor-pointer float-card group"
                         onClick={() => setLocation(`/projetos/${project.id}`)}
                         data-testid={`card-project-${project.id}`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 min-w-0">
                             <div
-                              className="neu-card-sm h-10 w-10 flex items-center justify-center flex-shrink-0"
+                              className="h-11 w-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                              style={{
+                                background: `${LANGUAGE_COLORS[project.language.toLowerCase()] ?? '#00897B'}20`,
+                                border: `1px solid ${LANGUAGE_COLORS[project.language.toLowerCase()] ?? '#00897B'}40`,
+                              }}
                             >
                               <div
-                                className="h-3 w-3 rounded-full"
-                                style={{ backgroundColor: LANGUAGE_COLORS[project.language.toLowerCase()] ?? "hsl(27 73% 30%)" }}
+                                className="h-3.5 w-3.5 rounded-full"
+                                style={{ backgroundColor: LANGUAGE_COLORS[project.language.toLowerCase()] ?? '#00897B' }}
                               />
                             </div>
                             <div className="min-w-0">
@@ -219,35 +256,38 @@ export default function Dashboard() {
                                 {project.name}
                               </p>
                               {project.description && (
-                                <p className="text-xs text-muted-foreground truncate">{project.description}</p>
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">{project.description}</p>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                            <span className="text-[10px] font-mono text-muted-foreground capitalize hidden sm:block px-2 py-0.5 neu-inset rounded-full">
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <span
+                              className="text-[10px] capitalize hidden sm:block px-2.5 py-1 glass-inset rounded-full"
+                              style={{ fontFamily: 'var(--app-font-mono)' }}
+                            >
                               {project.language}
                             </span>
                             {project.isPublic ? (
-                              <Globe className="h-3.5 w-3.5 text-muted-foreground mx-1" />
+                              <Globe className="h-3.5 w-3.5 text-muted-foreground mx-1" strokeWidth={1.5} />
                             ) : (
-                              <Lock className="h-3.5 w-3.5 text-muted-foreground mx-1" />
+                              <Lock className="h-3.5 w-3.5 text-muted-foreground mx-1" strokeWidth={1.5} />
                             )}
                             <span className="text-xs text-muted-foreground hidden md:block">
                               {formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true, locale: ptBR })}
                             </span>
                             <button
-                              className="neu-btn h-8 w-8 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-card"
+                              className="btn-icon h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => { e.stopPropagation(); setLocation(`/projetos/${project.id}`); }}
                               data-testid={`button-edit-project-${project.id}`}
                             >
-                              <Edit3 className="h-3.5 w-3.5" />
+                              <Edit3 className="h-3.5 w-3.5" strokeWidth={1.5} />
                             </button>
                             <button
-                              className="neu-btn h-8 w-8 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-card text-destructive"
+                              className="btn-icon h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
                               onClick={(e) => { e.stopPropagation(); setDeleteId(project.id); }}
                               data-testid={`button-delete-project-${project.id}`}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
                             </button>
                           </div>
                         </div>
@@ -261,28 +301,28 @@ export default function Dashboard() {
 
           {/* Activity */}
           <div className="space-y-4">
-            <h2 className="text-base font-semibold font-mono flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+            <h2 className="text-base font-semibold flex items-center gap-2 px-1" style={{ fontFamily: 'var(--app-font-serif)' }}>
+              <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
               Atividade Recente
             </h2>
             {loadingActivity ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 rounded-xl" />
+                  <Skeleton key={i} className="h-14 rounded-[1.25rem]" />
                 ))}
               </div>
             ) : activity?.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma atividade ainda</p>
+              <p className="text-sm text-muted-foreground px-1">Nenhuma atividade ainda</p>
             ) : (
               <div className="space-y-2">
                 {activity?.map((item) => (
                   <div
                     key={item.id}
-                    className="neu-card-sm p-3 text-sm"
+                    className="glass-card-sm p-3.5"
                     data-testid={`activity-item-${item.id}`}
                   >
                     <p className="font-medium text-xs">{item.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1 font-mono">
+                    <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: 'var(--app-font-mono)' }}>
                       {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: ptBR })}
                     </p>
                   </div>
@@ -291,17 +331,26 @@ export default function Dashboard() {
             )}
 
             {(stats?.languagesUsed?.length ?? 0) > 0 && (
-              <div className="mt-4">
-                <h3 className="text-xs font-mono font-semibold uppercase tracking-wide mb-3">Linguagens em uso</h3>
-                <div className="space-y-2">
+              <div className="glass-card-sm p-4 mt-4">
+                <h3
+                  className="text-xs font-bold uppercase tracking-wider mb-4"
+                  style={{ fontFamily: 'var(--app-font-mono)', color: '#00897B' }}
+                >
+                  Linguagens em uso
+                </h3>
+                <div className="space-y-2.5">
                   {stats?.languagesUsed.map((lang) => (
                     <div key={lang.language} className="flex items-center gap-2">
                       <div
                         className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: LANGUAGE_COLORS[lang.language.toLowerCase()] ?? "hsl(27 73% 30%)" }}
+                        style={{ backgroundColor: LANGUAGE_COLORS[lang.language.toLowerCase()] ?? '#00897B' }}
                       />
-                      <span className="text-xs capitalize flex-1 font-mono">{lang.language}</span>
-                      <span className="text-xs text-muted-foreground font-mono">{lang.count}</span>
+                      <span className="text-xs capitalize flex-1" style={{ fontFamily: 'var(--app-font-mono)' }}>
+                        {lang.language}
+                      </span>
+                      <span className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+                        {lang.count}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -312,18 +361,19 @@ export default function Dashboard() {
       </div>
 
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent className="neu-card border-0">
+        <AlertDialogContent className="glass-card border-0" style={{ borderRadius: '2rem' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deletar projeto?</AlertDialogTitle>
+            <AlertDialogTitle style={{ fontFamily: 'var(--app-font-serif)' }}>Deletar projeto?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Todos os arquivos e secrets deste projeto serão removidos permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="neu-btn bg-card">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="btn-glass border-0">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteProject.mutate({ id: deleteId })}
-              className="neu-btn bg-destructive text-destructive-foreground"
+              className="btn-primary border-0"
+              style={{ background: 'hsl(var(--destructive))', boxShadow: 'none' }}
               data-testid="button-confirm-delete"
             >
               Deletar

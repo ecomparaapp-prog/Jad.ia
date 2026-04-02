@@ -9,7 +9,7 @@ import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
 import { useTheme } from "@/components/theme-provider";
-import { KeyRound, ArrowRight } from "lucide-react";
+import { KeyRound, ArrowRight, Sparkles } from "lucide-react";
 import logoBranca from "@assets/logo_sem_fundo_branca_1775101885588.jpg";
 import logo from "@assets/logo_sem_fundo_1775101885589.png";
 
@@ -60,83 +60,107 @@ export default function Login() {
   return (
     <div className="min-h-screen flex">
 
-      {/* Left panel */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12 border-r border-border/50"
-        style={{ background: "hsl(var(--sidebar))" }}
-      >
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex flex-1 items-center justify-center p-12 relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'var(--gradient-primary)', opacity: 0.07 }}
+        />
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
+          initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-sm text-center"
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-sm text-center relative"
         >
-          <div className="neu-card inline-flex p-6 rounded-3xl mb-8">
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="glass-card inline-flex p-8 mb-10"
+            style={{ borderRadius: '2.5rem' }}
+          >
             <img
               src={theme === "dark" ? logoBranca : logo}
               alt="Jadi.ia"
-              className="h-24 w-24 object-contain"
+              className="h-28 w-28 object-contain"
             />
-          </div>
-          <h2 className="text-2xl font-bold mb-3 font-mono">Jadi.ia</h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          </motion.div>
+          <h2
+            className="text-3xl font-bold mb-4"
+            style={{ fontFamily: 'var(--app-font-serif)' }}
+          >
+            Jadi.ia
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">
             Crie sites, sistemas e apps com suporte de IA em português. Descreva, e o código aparece em tempo real.
           </p>
+
+          <div className="mt-8 flex items-center justify-center gap-2">
+            <Sparkles className="h-4 w-4" style={{ color: '#FF8C00' }} strokeWidth={1.5} />
+            <span className="text-sm font-medium text-muted-foreground">Powered by Groq AI</span>
+          </div>
         </motion.div>
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-sm"
         >
+          {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <img
-              src={theme === "dark" ? logoBranca : logo}
-              alt="Jadi.ia"
-              className="h-10 w-10 object-contain"
-            />
+            <img src={theme === "dark" ? logoBranca : logo} alt="Jadi.ia" className="h-10 w-10 object-contain" />
+            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jadi.ia</span>
           </div>
 
-          <h1 className="text-2xl font-bold mb-1">Entrar</h1>
-          <p className="text-sm text-muted-foreground mb-7">Acesse sua conta no Jadi.ia</p>
+          <h1
+            className="text-3xl font-bold mb-2"
+            style={{ fontFamily: 'var(--app-font-serif)' }}
+          >
+            Entrar
+          </h1>
+          <p className="text-sm text-muted-foreground mb-8">Acesse sua conta no Jadi.ia</p>
 
           {/* Test credentials */}
           <div
-            className="mb-6 p-3.5 neu-inset cursor-pointer transition-opacity hover:opacity-80"
+            className="mb-7 p-4 glass-inset cursor-pointer transition-all hover:opacity-80 rounded-2xl"
             onClick={fillTestCredentials}
             data-testid="test-credentials-hint"
             title="Clique para preencher automaticamente"
           >
-            <div className="flex items-center gap-2 mb-1.5">
-              <KeyRound className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <span className="text-xs font-semibold text-primary font-mono">Conta de teste — clique para preencher</span>
+            <div className="flex items-center gap-2 mb-2">
+              <KeyRound className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#00897B' }} strokeWidth={1.5} />
+              <span className="text-xs font-semibold" style={{ color: '#00897B', fontFamily: 'var(--app-font-mono)' }}>
+                Conta de teste — clique para preencher
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground font-mono">
-              Email: <span className="text-foreground">admin@jadi.ia</span>
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+              Email: <span className="text-foreground font-medium">admin@jadi.ia</span>
             </p>
-            <p className="text-xs text-muted-foreground font-mono">
-              Senha: <span className="text-foreground">admin123</span>
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+              Senha: <span className="text-foreground font-medium">admin123</span>
             </p>
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-mono uppercase tracking-wide text-muted-foreground">Email</FormLabel>
+                    <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+                      Email
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="seu@email.com"
                         data-testid="input-email"
                         autoComplete="email"
-                        className="neu-inset border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="glass-inset border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-[#00897B] rounded-2xl h-12 px-4"
                         {...field}
                       />
                     </FormControl>
@@ -150,14 +174,16 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-mono uppercase tracking-wide text-muted-foreground">Senha</FormLabel>
+                    <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
+                      Senha
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••••"
                         data-testid="input-password"
                         autoComplete="current-password"
-                        className="neu-inset border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="glass-inset border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-[#00897B] rounded-2xl h-12 px-4"
                         {...field}
                       />
                     </FormControl>
@@ -169,18 +195,18 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loginMutation.isPending}
-                className="neu-btn w-full inline-flex items-center justify-center gap-2 py-3 text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                className="btn-primary w-full py-3.5 text-sm mt-2"
                 data-testid="button-submit"
               >
                 {loginMutation.isPending ? "Entrando..." : "Entrar"}
-                {!loginMutation.isPending && <ArrowRight className="h-4 w-4" />}
+                {!loginMutation.isPending && <ArrowRight className="h-4 w-4" strokeWidth={2} />}
               </button>
             </form>
           </Form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-7">
             Não tem uma conta?{" "}
-            <Link href="/registro" className="text-primary hover:underline font-semibold" data-testid="link-register">
+            <Link href="/registro" className="font-semibold hover:underline" style={{ color: '#00897B' }} data-testid="link-register">
               Criar conta gratuita
             </Link>
           </p>
