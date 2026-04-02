@@ -41,6 +41,35 @@ function getPicsumUrls(query: string, count = 3): string[] {
   return Array.from({ length: count }, (_, i) => `${PICSUM_BASE}/800/450?random=${seed}-${i}`);
 }
 
+async function searchFreeSound(query: string, count = 3): Promise<Array<{ name: string; url: string; preview: string }>> {
+  const apiKey = process.env.FREESOUND_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const res = await fetch(
+      `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(query)}&page_size=${count}&fields=id,name,previews&token=${apiKey}`,
+    );
+    if (!res.ok) return [];
+    const data = await res.json() as {
+      results?: Array<{
+        id: number;
+        name: string;
+        previews?: { "preview-hq-mp3"?: string; "preview-lq-mp3"?: string };
+      }>;
+    };
+
+    return (data.results ?? [])
+      .map((s) => ({
+        name: s.name,
+        url: `https://freesound.org/s/${s.id}/`,
+        preview: s.previews?.["preview-hq-mp3"] ?? s.previews?.["preview-lq-mp3"] ?? "",
+      }))
+      .filter((s) => s.preview !== "");
+  } catch {
+    return [];
+  }
+}
+
 router.get("/api/assets/images", requireAuth, async (req, res): Promise<void> => {
   const query = String(req.query.query ?? "nature");
   const count = Math.min(Number(req.query.count ?? 3), 9);
@@ -72,10 +101,22 @@ router.get("/api/assets/fonts/:mood", requireAuth, async (req, res): Promise<voi
   res.json({ ...pair, googleFontsUrl, cssVars, mood });
 });
 
+router.get("/api/assets/sounds", requireAuth, async (req, res): Promise<void> => {
+  const query = String(req.query.query ?? "notification");
+  const count = Math.min(Number(req.query.count ?? 3), 9);
+
+  const sounds = await searchFreeSound(query, count);
+  const source = sounds.length > 0 ? "freesound" : "none";
+
+  logger.info({ query, count: sounds.length, source }, "Sons buscados");
+  res.json({ sounds, source, query });
+});
+
 router.post("/api/assets/resolve", requireAuth, async (req, res): Promise<void> => {
-  const { imageQueries = [], fontMood = "modern" } = req.body as {
+  const { imageQueries = [], fontMood = "modern", soundQueries = [] } = req.body as {
     imageQueries: string[];
     fontMood: string;
+    soundQueries?: string[];
   };
 
   const mood = fontMood.toLowerCase();
@@ -95,15 +136,25 @@ router.post("/api/assets/resolve", requireAuth, async (req, res): Promise<void> 
     }),
   );
 
-  logger.info({ mood, imageQueries }, "Assets resolved");
+  const soundResults: Record<string, Array<{ name: string; url: string; preview: string }>> = {};
+  await Promise.all(
+    (soundQueries ?? []).slice(0, 3).map(async (query) => {
+      soundResults[query] = await searchFreeSound(query, 2);
+    }),
+  );
+
+  logger.info({ mood, imageQueries, soundQueries }, "Assets resolvidos");
+
   res.json({
     fonts: {
       heading: fontPair.heading.replace(/\+/g, " "),
       body: fontPair.body.replace(/\+/g, " "),
       googleFontsUrl,
       cssVars: `--font-heading: '${fontPair.heading.replace(/\+/g, " ")}', sans-serif; --font-body: '${fontPair.body.replace(/\+/g, " ")}', sans-serif;`,
+      mood,
     },
     images: imageResults,
+    sounds: soundResults,
   });
 });
 

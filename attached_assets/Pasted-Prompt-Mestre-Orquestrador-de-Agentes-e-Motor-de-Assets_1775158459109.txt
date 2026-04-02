@@ -1,0 +1,32 @@
+Prompt Mestre: Orquestrador de Agentes e Motor de Assets Criativos
+"Implemente o Sistema de Orquestração Multi-Agente com Automação de Assets no backend do Jadi.ia. O objetivo é que a IA alterne entre provedores de API automaticamente e alimente os projetos com mídias reais de forma autônoma.
+
+1. Arquitetura de Agentes e Alternância de APIs:
+
+O Analista (Gemini 1.5 Flash): Ativado pelo botão 'Solicitar Análise'. Deve usar process.env.GEMINI_API_KEY. Sua função é ler o contexto global, planejar a estrutura do app e selecionar a identidade visual (fontes e paleta).
+
+O Construtor (Groq - Qwen 2.5 Coder): Ativado pelo botão 'Iniciar Vibe Coding'. Deve usar process.env.GROQ_API_KEY. Ele recebe o plano do Analista e escreve os arquivos físicos no Replit.
+
+Fallback Automático: Se a Groq falhar (Erro 429/500), o sistema deve alternar silenciosamente para o Gemini ou Mistral para concluir a escrita do código.
+
+2. Integração Automática de Assets (Sem Intervenção Manual):
+
+Imagens Dinâmicas (Unsplash/Pexels): Configure uma função fetchImageAsset(query) que use process.env.UNSPLASH_ACCESS_KEY. O Construtor deve chamar essa função para buscar fotos reais baseadas no tema (ex: 'ovos caipiras', 'fazenda') e injetar as URLs no código.
+
+Tipografia Inteligente (Google Fonts): O Analista deve escolher pares de fontes harmônicas. O Construtor deve injetar automaticamente o link do Google Fonts no <head> do HTML e configurar as variáveis de CSS.
+
+Iconografia Técnica (Lucide/Iconify): Proíba o uso de emojis no código. O Construtor deve usar a biblioteca lucide-react ou a API da Iconify para gerar ícones vetoriais em todos os botões e menus.
+
+Sons e Efeitos (FreeSound): Use process.env.FREESOUND_API_KEY para buscar e referenciar efeitos sonoros básicos (clicks, notificações) nos projetos interativos.
+
+3. UI/UX de Painel de Controle (Single Page Viewport):
+
+Trave a interface em 100vh (sem rolagem na página inteira).
+
+Crie botões grandes e distintos: [🔍 Solicitar Análise] em Verde Oliva e [🛠️ Iniciar Vibe Coding] em Marrom Terracota.
+
+Exiba um 'Log de Ativos' mostrando quais imagens e fontes a IA 'pescou' na internet para o projeto atual.
+
+4. Gerenciamento de Arquivos:
+
+Garanta que todos os assets baixados ou referenciados sejam organizados em uma pasta /public/assets dentro do projeto gerado, mantendo a estrutura limpa e profissional."

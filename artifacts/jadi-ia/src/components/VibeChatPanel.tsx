@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback, DragEvent, ClipboardEvent, Ke
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
-  Send,
   RefreshCw,
   Image,
   FileText,
@@ -15,6 +14,10 @@ import {
   Search,
   Terminal,
   AlertCircle,
+  Globe,
+  ImageIcon,
+  Volume2,
+  Package,
 } from "lucide-react";
 
 interface Attachment {
@@ -44,6 +47,25 @@ interface StackDecision {
 interface VibeFile {
   name: string;
   status: "writing" | "done" | "queued";
+}
+
+interface AssetLogEntry {
+  type: "image" | "font" | "sound";
+  label: string;
+  value: string;
+  source?: string;
+}
+
+interface ResolvedAssets {
+  fonts: {
+    heading: string;
+    body: string;
+    googleFontsUrl: string;
+    cssVars: string;
+    mood: string;
+  };
+  images: Record<string, string[]>;
+  sounds: Record<string, Array<{ name: string; url: string; preview: string }>>;
 }
 
 interface VibeChatPanelProps {
@@ -100,7 +122,7 @@ Quando solicitado a criar um sistema, app ou projeto completo, siga SEMPRE este 
 [conteúdo completo e funcional do arquivo aqui]
 ===END_FILE===
 
-REGRAS OBRIGATÓRIAS:
+REGRAS OBRIGATÓRIAS DE CÓDIGO:
 - Use apenas HTML, CSS e JavaScript puro (sem npm, sem frameworks externos)
 - Sempre crie um index.html como arquivo principal de entrada
 - Cada arquivo deve ser completo, funcional e bem estruturado
@@ -108,6 +130,14 @@ REGRAS OBRIGATÓRIAS:
 - Para CSS, use variáveis CSS e design responsivo
 - Para JS, use código limpo e comentado
 - Não use placeholders — escreva o código real e funcional
+
+REGRAS OBRIGATÓRIAS DE ASSETS:
+- PROIBIDO usar emojis no código. Use exclusivamente ícones SVG da biblioteca Lucide (via CDN: https://unpkg.com/lucide@latest) ou Iconify (https://icon-sets.iconify.design/) em todos os botões, menus e ícones decorativos.
+- TIPOGRAFIA: Se o contexto incluir [ASSETS] com googleFontsUrl, SEMPRE injete o link do Google Fonts no <head> do HTML e aplique as variáveis CSS --font-heading e --font-body no :root e em h1,h2,h3,body.
+- IMAGENS: Se o contexto incluir [ASSETS] com URLs de imagens, use-as diretamente no código (como src de <img> ou background-image). Referencie como /public/assets/img/ no comentário mas use a URL real fornecida.
+- SONS: Se o contexto incluir [ASSETS] com URLs de som (preview MP3), use <audio> elements com src apontando para as URLs fornecidas. Coloque os sons em /public/assets/sounds/ nos comentários.
+- ORGANIZAÇÃO: Organize assets gerados em /public/assets/ (imagens em /public/assets/img/, sons em /public/assets/sounds/, fontes em /public/assets/fonts/).
+- Iconify CDN para ícones inline: <span class="iconify" data-icon="mdi:home"></span> com <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
 `;
 
 const OLIVE_GREEN = "#414833";
@@ -218,6 +248,36 @@ function AgentBadge({ type }: { type: "analise" | "construcao" }) {
   );
 }
 
+function AssetLogPanel({ entries }: { entries: AssetLogEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mx-3 mb-2 rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(88,47,14,0.06)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
+        <Package className="h-3.5 w-3.5" style={{ color: "#a0622a" }} />
+        <span className="text-[11px] font-mono font-medium" style={{ color: "#a0622a" }}>Log de Ativos</span>
+      </div>
+      <div className="p-2 space-y-1 max-h-36 overflow-y-auto">
+        {entries.map((entry, i) => (
+          <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg">
+            {entry.type === "image" && <ImageIcon className="h-3 w-3 text-blue-400 flex-shrink-0" />}
+            {entry.type === "font" && <Globe className="h-3 w-3 text-purple-400 flex-shrink-0" />}
+            {entry.type === "sound" && <Volume2 className="h-3 w-3 text-yellow-400 flex-shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-mono text-muted-foreground/70 mr-1">{entry.label}:</span>
+              <span className="text-[10px] font-mono text-foreground/80 truncate block">{entry.value}</span>
+            </div>
+            {entry.source && (
+              <span className="text-[9px] font-mono px-1 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "#a0622a" }}>
+                {entry.source}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function VibeFilesProgress({ files }: { files: VibeFile[] }) {
   if (files.length === 0) return null;
   return (
@@ -283,6 +343,8 @@ export default function VibeChatPanel({
   const [activeAgent, setActiveAgent] = useState<"analise" | "construcao">("construcao");
   const [providerSwitchMsg, setProviderSwitchMsg] = useState("");
   const [analysisContext, setAnalysisContext] = useState<string>("");
+  const [assetLog, setAssetLog] = useState<AssetLogEntry[]>([]);
+  const [isFetchingAssets, setIsFetchingAssets] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -485,6 +547,74 @@ export default function VibeChatPanel({
     }
   }
 
+  const fetchAndResolveAssets = useCallback(async (userMessage: string): Promise<{ assetContext: string; entries: AssetLogEntry[] }> => {
+    const token = localStorage.getItem("token");
+    const words = userMessage.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+    const imageQueries = words.slice(0, 2).map((w) => `${w} modern design`);
+    const soundQueries = ["button click", "notification"];
+    const fontMood = stackDecision
+      ? ["modern", "tech", "bold", "minimal", "creative", "editorial", "elegant", "corporate"].find((m) =>
+          stackDecision.framework?.toLowerCase().includes(m) ||
+          stackDecision.projectType?.toLowerCase().includes(m),
+        ) ?? "modern"
+      : "modern";
+
+    try {
+      setIsFetchingAssets(true);
+      const res = await fetch("/api/assets/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ imageQueries, fontMood, soundQueries }),
+      });
+      if (!res.ok) return { assetContext: "", entries: [] };
+
+      const data: ResolvedAssets = await res.json();
+      const entries: AssetLogEntry[] = [];
+
+      entries.push({
+        type: "font",
+        label: "Tipografia",
+        value: `${data.fonts.heading} (heading) · ${data.fonts.body} (body)`,
+        source: "Google Fonts",
+      });
+
+      Object.entries(data.images).forEach(([query, urls]) => {
+        urls.slice(0, 1).forEach((url) => {
+          entries.push({ type: "image", label: query, value: url, source: "Unsplash" });
+        });
+      });
+
+      Object.entries(data.sounds).forEach(([query, sounds]) => {
+        sounds.slice(0, 1).forEach((s) => {
+          entries.push({ type: "sound", label: query, value: s.name, source: "FreeSound" });
+        });
+      });
+
+      setAssetLog(entries);
+
+      const imageLines = Object.entries(data.images)
+        .map(([q, urls]) => `  - "${q}": ${urls.slice(0, 2).join(", ")}`)
+        .join("\n");
+      const soundLines = Object.entries(data.sounds)
+        .map(([q, sounds]) => `  - "${q}": ${sounds.slice(0, 1).map((s) => s.preview).join(", ")}`)
+        .join("\n");
+
+      const assetContext = `\n\n[ASSETS PARA USAR NO CÓDIGO]
+Fontes Google: ${data.fonts.googleFontsUrl}
+CSS Vars: ${data.fonts.cssVars}
+Imagens (use estas URLs diretamente):
+${imageLines}
+Sons (URLs de preview MP3):
+${soundLines || "  - Nenhum son disponível"}`;
+
+      return { assetContext, entries };
+    } catch {
+      return { assetContext: "", entries: [] };
+    } finally {
+      setIsFetchingAssets(false);
+    }
+  }, [stackDecision]);
+
   const handleSend = async (taskType: "analise" | "construcao" = "construcao", overrideInput?: string) => {
     const trimmed = (overrideInput ?? input).trim();
     if (!trimmed && attachments.length === 0) return;
@@ -514,6 +644,12 @@ export default function VibeChatPanel({
     setVibeFiles([]);
     processedFilesRef.current = new Set();
 
+    let resolvedAssetContext = "";
+    if (vibeMode && taskType === "construcao" && trimmed) {
+      const { assetContext } = await fetchAndResolveAssets(trimmed);
+      resolvedAssetContext = assetContext;
+    }
+
     const assistantPlaceholder: ChatMessage = {
       role: "assistant",
       content: "",
@@ -535,8 +671,10 @@ export default function VibeChatPanel({
           m.role === "user" && m.attachments?.some((a) => a.type === "image")
             ? userContent
             : contextPrefix && m === userMsg
-              ? contextPrefix + m.content
-              : m.content,
+              ? contextPrefix + m.content + resolvedAssetContext
+              : m === userMsg && resolvedAssetContext
+                ? m.content + resolvedAssetContext
+                : m.content,
       }));
 
     const effectiveLanguage =
@@ -932,6 +1070,15 @@ export default function VibeChatPanel({
 
       <VibeFilesProgress files={vibeFiles} />
 
+      {isFetchingAssets && (
+        <div className="mx-3 mb-2 px-3 py-2 rounded-xl border border-white/8 flex items-center gap-2" style={{ background: "rgba(88,47,14,0.08)" }}>
+          <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#a0622a" }} />
+          <span className="text-[10px] font-mono" style={{ color: "#a0622a" }}>Buscando assets na internet...</span>
+        </div>
+      )}
+
+      <AssetLogPanel entries={assetLog} />
+
       {providerSwitchMsg && !isStreaming && (
         <div className="px-3 py-1.5 flex-shrink-0">
           <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
@@ -1096,17 +1243,17 @@ export default function VibeChatPanel({
                   disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
                   className="flex-1 h-11 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
-                    background: OLIVE_GREEN,
+                    background: TERRACOTTA,
                     color: BEIGE,
-                    border: `1.5px solid ${OLIVE_GREEN}`,
-                    boxShadow: `0 2px 8px ${OLIVE_GREEN}30`,
+                    border: `1.5px solid ${TERRACOTTA}`,
+                    boxShadow: `0 2px 8px ${TERRACOTTA}30`,
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${OLIVE_GREEN}50`;
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${TERRACOTTA}50`;
                     (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${OLIVE_GREEN}30`;
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${TERRACOTTA}30`;
                     (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
                   }}
                 >
