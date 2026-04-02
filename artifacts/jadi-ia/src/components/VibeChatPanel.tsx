@@ -140,12 +140,15 @@ export default function VibeChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
 
   useEffect(() => {
+    lastParentMessagesRef.current = initialMessages;
     setMessages(initialMessages);
   }, [initialMessages]);
 
   useEffect(() => {
+    if (messages === lastParentMessagesRef.current) return;
     onMessagesChange(messages);
   }, [messages]);
 
