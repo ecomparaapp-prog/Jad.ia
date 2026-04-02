@@ -17,7 +17,6 @@ import {
   useListProjectSecrets,
   useCreateProjectSecret,
   useDeleteProjectSecret,
-  useGeneratePrompt,
   useAnalyzeStack,
   getGetProjectQueryKey,
   getListProjectFilesQueryKey,
@@ -46,6 +45,7 @@ import {
 import { AnimatePresence } from "framer-motion";
 import VibeChatPanel from "@/components/VibeChatPanel";
 import PreviewPanel from "@/components/PreviewPanel";
+import GeneratePromptModal from "@/components/GeneratePromptModal";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -102,6 +102,7 @@ export default function Editor() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [vibeMode, setVibeMode] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
 
   const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFileContentsRef = useRef<Record<string, string>>({});
@@ -252,21 +253,6 @@ export default function Editor() {
     },
   });
 
-  const generatePrompt = useGeneratePrompt({
-    mutation: {
-      onSuccess: (data) => {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: `**Prompt Técnico Gerado:**\n\n${data.prompt}\n\n**Sugestões:**\n${data.suggestions.map((s) => `- ${s}`).join("\n")}`,
-          },
-        ]);
-        setShowChat(true);
-      },
-    },
-  });
-
   function handleSave() {
     if (!selectedFileId) return;
     setIsSaving(true);
@@ -287,15 +273,16 @@ export default function Editor() {
   }
 
   function handleGeneratePrompt() {
-    if (!project) return;
-    const effectiveLanguage = stackDecision?.language ?? (isAutoMode ? undefined : project.language);
-    generatePrompt.mutate({
-      data: {
-        description: project.description ?? project.name,
-        projectType: stackDecision?.projectType ?? "web app",
-        language: effectiveLanguage,
-      },
-    });
+    setShowPromptModal(true);
+  }
+
+  function handleUsePromptInChat(prompt: string) {
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "user", content: prompt },
+    ]);
+    setShowChat(true);
+    setShowPromptModal(false);
   }
 
   function handleReanalyze() {
@@ -395,6 +382,7 @@ export default function Editor() {
   const lineCount = editingContent.split("\n").length;
 
   return (
+    <>
     <div className="flex-1 flex flex-col overflow-hidden" style={{ height: "calc(100vh - 56px)" }}>
       <div className="h-12 border-b border-border bg-background flex items-center px-3 gap-3 flex-shrink-0">
         <Button
@@ -742,5 +730,17 @@ export default function Editor() {
         </div>
       </div>
     </div>
+
+    {showPromptModal && project && (
+      <GeneratePromptModal
+        projectName={project.name}
+        projectDescription={project.description ?? project.name}
+        projectType={stackDecision?.projectType}
+        language={stackDecision?.language ?? (isAutoMode ? undefined : project.language)}
+        onClose={() => setShowPromptModal(false)}
+        onUsePrompt={handleUsePromptInChat}
+      />
+    )}
+    </>
   );
 }
