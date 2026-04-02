@@ -221,4 +221,120 @@ Responda com um JSON no seguinte formato:
   }
 });
 
+router.post("/ai/stream", requireAuth, async (req, res): Promise<void> => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  const sendEvent = (event: string, data: unknown) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    sendEvent("error", { message: "GROQ_API_KEY não configurada" });
+    res.end();
+    return;
+  }
+
+  const { messages, projectContext, language, systemPrompt } = req.body as {
+    messages: Array<{ role: string; content: string | unknown[] }>;
+    projectContext?: string;
+    language?: string;
+    systemPrompt?: string;
+  };
+
+  if (!messages || !Array.isArray(messages)) {
+    sendEvent("error", { message: "messages é obrigatório" });
+    res.end();
+    return;
+  }
+
+  const hasImages = messages.some(
+    (m) => Array.isArray(m.content) && m.content.some((c: unknown) => (c as { type?: string }).type === "image_url"),
+  );
+
+  const model = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
+
+  const baseSystem = `Você é Jadi, uma assistente de desenvolvimento de software inteligente integrada na plataforma Jadi.ia.
+Você ajuda desenvolvedores brasileiros a criar sites, sistemas, web apps e aplicativos mobile.
+Responda sempre em português do Brasil.
+${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
+${language && language !== "auto" ? `Linguagem principal do projeto: ${language}` : ""}
+Quando fornecer código, sempre use blocos de código com a linguagem especificada (ex: \`\`\`javascript).
+Seja direta e técnica. Explique o necessário, mas priorize código funcional e completo.`;
+
+  const systemContent = systemPrompt ? `${baseSystem}\n\n${systemPrompt}` : baseSystem;
+
+  const groqMessages = [{ role: "system", content: systemContent }, ...messages];
+
+  try {
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: groqMessages,
+        temperature: 0.7,
+        max_tokens: 8192,
+        stream: true,
+      }),
+    });
+
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      sendEvent("error", { message: `Groq API error: ${errText}` });
+      res.end();
+      return;
+    }
+
+    const reader = groqResponse.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const payload = trimmed.slice(6);
+        if (payload === "[DONE]") {
+          sendEvent("done", {});
+          res.end();
+          return;
+        }
+        try {
+          const parsed = JSON.parse(payload) as {
+            choices?: Array<{ delta?: { content?: string } }>;
+          };
+          const token = parsed.choices?.[0]?.delta?.content;
+          if (token) {
+            sendEvent("token", { token });
+          }
+        } catch {
+          // skip malformed chunk
+        }
+      }
+    }
+
+    sendEvent("done", {});
+    res.end();
+  } catch (error) {
+    logger.error({ error }, "Erro no streaming SSE");
+    sendEvent("error", { message: "Erro ao processar streaming" });
+    res.end();
+  }
+});
+
 export default router;

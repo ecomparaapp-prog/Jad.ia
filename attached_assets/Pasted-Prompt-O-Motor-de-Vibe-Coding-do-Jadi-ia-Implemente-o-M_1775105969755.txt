@@ -1,0 +1,41 @@
+Prompt: O Motor de Vibe Coding do Jadi.ia
+"Implemente o Motor de Chat e Vibe Coding principal do Jadi.ia. Esta é a funcionalidade central onde o usuário descreve o projeto e a IA constrói os arquivos em tempo real.
+
+Requisitos da Interface (Chat UI):
+
+Caixa de Entrada Multimodal: Uma área de texto expansível que aceite:
+
+Texto Livre: Com suporte a comandos rápidos (ex: /setup, /fix).
+
+Imagens/Prints: Arrastar e soltar (Drag & Drop) ou colar imagens da área de transferência. A IA deve usar modelos de Visão da Groq para interpretar esses prints e transformá-los em código UI.
+
+Auto-Miniatura: Se o usuário colar um texto extremamente longo (ex: uma documentação inteira), o sistema deve converter esse bloco de texto visualmente em um 'Snippet' ou ícone de documento dentro da caixa, para não poluir a visualização, mas mantendo o conteúdo para a IA.
+
+Mecânica de Vibe Coding (O Fluxo):
+
+Streaming de Resposta: Use Server-Sent Events (SSE) para que, conforme a Groq gera o código, ele apareça imediatamente no editor de código do projeto, sem que o usuário precise esperar a resposta terminar.
+
+Sincronização com o Preview: Implemente um sistema onde, a cada 'bloco de código' finalizado pela IA Principal, o painel de Pré-visualização (Preview) seja atualizado automaticamente.
+
+Feedback Visual: Enquanto a IA escreve, mostre um indicador de status discreto (ex: 'Jadi.ia está arquitetando os componentes...' ou 'Estilizando com Tailwind...').
+
+Integração de Agentes:
+
+Quando o usuário envia o prompt, o Agente Analista valida a ideia primeiro e envia o 'Plano de Ação' para a IA Principal (Construtora).
+
+A IA Principal então começa a 'escrever' os arquivos no sistema de arquivos do projeto no Replit.
+
+Estética: O design deve ser idêntico ao Agent do Replit: fundo levemente transparente (glassmorphism), bordas arredondadas e fontes monoespaçadas para trechos de código."
+
+Como o Replit Agent vai montar isso tecnicamente:
+Componente de Input: Ele provavelmente usará uma biblioteca como react-textarea-autosize ou um contenteditable customizado para lidar com as imagens coladas.
+
+Lógica de PNG: Para a funcionalidade de "texto longo virar imagem/ícone", o sistema detectará o char_count. Se for maior que 1000 caracteres, ele encapsula isso em um componente visual de "Documento" que a IA lerá como um arquivo anexado.
+
+Vibe Coding: A mágica aqui é o File System API do Replit. A IA não apenas "fala" o código, ela usa uma função para escrever o arquivo no disco virtual, o que dispara o Hot Reload do preview.
+
+Dica para você testar o "Vibe":
+Assim que o Replit terminar de criar essa caixa, tente o seguinte comando:
+"Crie uma página de destino para uma marca de ovos caipira chamada Vó Nice, use cores marrom e laranja, e faça um layout rústico moderno."
+
+Se o motor estiver certo, você verá o HTML e o CSS sendo escritos "sozinhos" no painel de código enquanto o site aparece no preview lateral.

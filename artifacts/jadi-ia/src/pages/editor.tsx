@@ -17,7 +17,6 @@ import {
   useListProjectSecrets,
   useCreateProjectSecret,
   useDeleteProjectSecret,
-  useAiChat,
   useGeneratePrompt,
   useAnalyzeStack,
   getGetProjectQueryKey,
@@ -32,7 +31,6 @@ import {
   Plus,
   Save,
   Trash2,
-  Send,
   Cpu,
   Lock,
   GitBranch,
@@ -41,14 +39,15 @@ import {
   Wand2,
   X,
   Bot,
-  RefreshCw,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import VibeChatPanel from "@/components/VibeChatPanel";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-  isSystemDecision?: boolean;
+  isDecision?: boolean;
+  isStreaming?: boolean;
 }
 
 interface StackDecision {
@@ -71,7 +70,6 @@ export default function Editor() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("code");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [showNewFile, setShowNewFile] = useState(false);
@@ -79,7 +77,7 @@ export default function Editor() {
   const [newSecretValue, setNewSecretValue] = useState("");
   const [stackDecision, setStackDecision] = useState<StackDecision | null>(null);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: project, isLoading: loadingProject } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -96,7 +94,9 @@ export default function Editor() {
   const { data: currentFile } = useGetProjectFile(projectId, selectedFileId ?? 0, {
     query: {
       enabled: !!projectId && !!selectedFileId,
-      queryKey: selectedFileId ? getGetProjectFileQueryKey(projectId, selectedFileId) : getGetProjectFileQueryKey(projectId, 0),
+      queryKey: selectedFileId
+        ? getGetProjectFileQueryKey(projectId, selectedFileId)
+        : getGetProjectFileQueryKey(projectId, 0),
     },
   });
 
@@ -107,14 +107,8 @@ export default function Editor() {
   }, [files, selectedFileId]);
 
   useEffect(() => {
-    if (currentFile) {
-      setEditingContent(currentFile.content);
-    }
+    if (currentFile) setEditingContent(currentFile.content);
   }, [currentFile]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
 
   const isAutoMode = project?.language === "auto";
 
@@ -130,22 +124,19 @@ export default function Editor() {
         };
         setStackDecision(decision);
         setHasAnalyzed(true);
-        const justificationMsg: ChatMessage = {
+        const msg: ChatMessage = {
           role: "assistant",
-          content: `🤖 **Decisão do Agente Analista**\n\nIdentifiquei que seu projeto é **${data.projectType}**. Vou utilizar **${data.framework} (${data.language})** por ser a melhor opção para ${data.justification}\n\nPode me perguntar qualquer coisa sobre o desenvolvimento!`,
-          isSystemDecision: true,
+          content: `🤖 **Agente Analista**\n\nIdentifiquei que seu projeto é **${data.projectType}**. Vou utilizar **${data.framework} (${data.language})** por ser a melhor opção: ${data.justification}\n\nDescreva o que quer construir — o código vai aparecer no editor em tempo real!`,
+          isDecision: true,
         };
-        setChatMessages((prev) => [...prev, justificationMsg]);
+        setChatMessages([msg]);
       },
       onError: () => {
         setHasAnalyzed(true);
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: "Não consegui analisar a stack automaticamente. Por favor, me diga qual linguagem/framework você prefere usar.",
-          },
-        ]);
+        setChatMessages([{
+          role: "assistant",
+          content: "Não consegui analisar a stack automaticamente. Descreva o que quer construir e eu escolho a melhor linguagem.",
+        }]);
       },
     },
   });
@@ -219,30 +210,17 @@ export default function Editor() {
     },
   });
 
-  const aiChat = useAiChat({
-    mutation: {
-      onSuccess: (data) => {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: data.message },
-        ]);
-      },
-      onError: () => {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Erro ao processar sua mensagem. Verifique se a chave GROQ_API_KEY está configurada." },
-        ]);
-      },
-    },
-  });
-
   const generatePrompt = useGeneratePrompt({
     mutation: {
       onSuccess: (data) => {
         setChatMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `**Prompt Tecnico Gerado:**\n\n${data.prompt}\n\n**Sugestoes:**\n${data.suggestions.map((s) => `- ${s}`).join("\n")}` },
+          {
+            role: "assistant",
+            content: `**Prompt Técnico Gerado:**\n\n${data.prompt}\n\n**Sugestões:**\n${data.suggestions.map((s) => `- ${s}`).join("\n")}`,
+          },
         ]);
+        setShowChat(true);
       },
     },
   });
@@ -262,34 +240,7 @@ export default function Editor() {
     const effectiveLanguage = stackDecision?.language ?? project?.language ?? "javascript";
     createFile.mutate({
       id: projectId,
-      data: {
-        name: newFileName,
-        language: effectiveLanguage,
-      },
-    });
-  }
-
-  function handleSendChat() {
-    if (!chatInput.trim()) return;
-    const msg: ChatMessage = { role: "user", content: chatInput };
-    setChatMessages((prev) => [...prev, msg]);
-    setChatInput("");
-
-    const effectiveLanguage = isAutoMode
-      ? (stackDecision ? `${stackDecision.framework} (${stackDecision.language})` : "auto")
-      : project?.language;
-
-    const chatOnlyMessages = [...chatMessages, msg]
-      .filter((m) => !m.isSystemDecision)
-      .map(({ role, content }) => ({ role, content }));
-
-    aiChat.mutate({
-      data: {
-        messages: chatOnlyMessages,
-        projectContext: `Projeto: ${project?.name}, Arquivo: ${currentFile?.name}`,
-        language: effectiveLanguage,
-        systemPrompt: stackDecision?.systemPrompt ?? null,
-      },
+      data: { name: newFileName, language: effectiveLanguage },
     });
   }
 
@@ -303,18 +254,31 @@ export default function Editor() {
         language: effectiveLanguage,
       },
     });
-    setShowChat(true);
   }
 
-  function handleReanalyzeStack() {
-    if (!project) return;
+  function handleReanalyze() {
     setStackDecision(null);
     setHasAnalyzed(false);
     setChatMessages([]);
   }
 
+  function handleLiveCodeUpdate(code: string, _lang: string) {
+    if (!code.trim()) return;
+    setEditingContent(code);
+    if (liveUpdateTimerRef.current) clearTimeout(liveUpdateTimerRef.current);
+    liveUpdateTimerRef.current = setTimeout(() => {
+      if (selectedFileId) {
+        updateFile.mutate({
+          id: projectId,
+          fileId: selectedFileId,
+          data: { content: code },
+        });
+      }
+    }, 1500);
+  }
+
   const effectiveLangLabel = isAutoMode
-    ? (stackDecision ? `${stackDecision.framework}` : "Automático")
+    ? stackDecision?.framework ?? "Automático"
     : project?.language ?? "";
 
   if (loadingProject) {
@@ -336,8 +300,10 @@ export default function Editor() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Projeto nao encontrado</p>
-          <Button onClick={() => setLocation("/dashboard")} data-testid="button-back-dashboard">Voltar ao Dashboard</Button>
+          <p className="text-muted-foreground mb-4">Projeto não encontrado</p>
+          <Button onClick={() => setLocation("/dashboard")} data-testid="button-back-dashboard">
+            Voltar ao Dashboard
+          </Button>
         </div>
       </div>
     );
@@ -365,7 +331,13 @@ export default function Editor() {
           </Badge>
         </div>
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onClick={handleGeneratePrompt} className="h-7 text-xs gap-1" data-testid="button-generate-prompt">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleGeneratePrompt}
+          className="h-7 text-xs gap-1"
+          data-testid="button-generate-prompt"
+        >
           <Wand2 className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Gerar Prompt</span>
         </Button>
@@ -373,13 +345,19 @@ export default function Editor() {
           variant="ghost"
           size="sm"
           onClick={() => setShowChat(!showChat)}
-          className="h-7 text-xs gap-1"
+          className={`h-7 text-xs gap-1 ${showChat ? "bg-primary/10 text-primary" : ""}`}
           data-testid="button-toggle-chat"
         >
           <Cpu className="h-3.5 w-3.5 text-primary" />
           <span className="hidden sm:inline">IA</span>
         </Button>
-        <Button size="sm" onClick={handleSave} disabled={!selectedFileId || isSaving} className="h-7 text-xs gap-1" data-testid="button-save">
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={!selectedFileId || isSaving}
+          className="h-7 text-xs gap-1"
+          data-testid="button-save"
+        >
           <Save className="h-3.5 w-3.5" />
           {isSaving ? "Salvando..." : "Salvar"}
         </Button>
@@ -442,9 +420,7 @@ export default function Editor() {
                       <div
                         key={file.id}
                         className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer group transition-colors ${
-                          selectedFileId === file.id
-                            ? "bg-primary/15 text-primary"
-                            : "hover:bg-muted/50"
+                          selectedFileId === file.id ? "bg-primary/15 text-primary" : "hover:bg-muted/50"
                         }`}
                         onClick={() => setSelectedFileId(file.id)}
                         data-testid={`file-item-${file.id}`}
@@ -546,7 +522,7 @@ export default function Editor() {
             <TabsContent value="git" className="flex-1 overflow-auto m-0 p-3">
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs font-medium mb-1">Repositorio Git</p>
+                  <p className="text-xs font-medium mb-1">Repositório Git</p>
                   <p className="text-xs text-muted-foreground">Integração com GitHub em breve.</p>
                 </div>
                 <div className="space-y-2">
@@ -562,7 +538,7 @@ export default function Editor() {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex flex-col overflow-hidden relative">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {selectedFileId && currentFile ? (
               <div className="flex-1 flex overflow-hidden font-mono text-sm">
                 <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
@@ -585,8 +561,9 @@ export default function Editor() {
                       e.preventDefault();
                       const start = e.currentTarget.selectionStart;
                       const end = e.currentTarget.selectionEnd;
-                      const newVal = editingContent.substring(0, start) + "  " + editingContent.substring(end);
-                      setEditingContent(newVal);
+                      setEditingContent(
+                        editingContent.substring(0, start) + "  " + editingContent.substring(end),
+                      );
                     }
                   }}
                 />
@@ -596,6 +573,7 @@ export default function Editor() {
                 <div className="text-center">
                   <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
                   <p className="text-sm">Selecione um arquivo para editar</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ou abre o chat da IA para gerar código</p>
                 </div>
               </div>
             )}
@@ -603,131 +581,19 @@ export default function Editor() {
 
           <AnimatePresence>
             {showChat && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 320, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="border-l border-border bg-background flex flex-col overflow-hidden flex-shrink-0"
-              >
-                <div className="h-10 border-b border-border flex items-center px-3 justify-between flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Jadi IA</span>
-                    {isAutoMode && stackDecision && (
-                      <Badge variant="secondary" className="text-xs flex items-center gap-1 h-5">
-                        <Bot className="h-3 w-3" />
-                        {stackDecision.framework}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {isAutoMode && hasAnalyzed && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={handleReanalyzeStack}
-                        title="Trocar linguagem"
-                        data-testid="button-reanalyze-stack"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => setShowChat(false)}
-                      data-testid="button-close-chat"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <ScrollArea className="flex-1 p-3">
-                  {chatMessages.length === 0 && !analyzeStack.isPending && (
-                    <div className="text-center py-8">
-                      <Cpu className="h-10 w-10 mx-auto text-primary/30 mb-3" />
-                      <p className="text-xs text-muted-foreground">
-                        {isAutoMode
-                          ? "O Agente Analista está avaliando seu projeto para escolher a melhor stack..."
-                          : "Olá! Sou a Jadi, sua assistente de desenvolvimento. Pergunte sobre código, peça sugestões ou gere um projeto."}
-                      </p>
-                    </div>
-                  )}
-                  {analyzeStack.isPending && chatMessages.length === 0 && (
-                    <div className="flex flex-col items-center py-8 gap-3">
-                      <Bot className="h-10 w-10 text-primary/50 animate-pulse" />
-                      <div className="text-center">
-                        <p className="text-xs font-medium text-foreground mb-1">Agente Analista trabalhando...</p>
-                        <p className="text-xs text-muted-foreground">Analisando seu projeto e selecionando a melhor stack tecnológica</p>
-                      </div>
-                    </div>
-                  )}
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`mb-3 ${msg.role === "user" ? "flex flex-row-reverse" : "flex"}`}
-                    >
-                      <div
-                        className={`max-w-[90%] rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
-                          msg.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : msg.isSystemDecision
-                              ? "bg-primary/10 border border-primary/20 text-foreground"
-                              : "bg-muted text-foreground"
-                        }`}
-                        data-testid={`chat-message-${i}`}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))}
-                  {aiChat.isPending && (
-                    <div className="flex mb-3">
-                      <div className="bg-muted rounded-lg px-3 py-2 text-xs">
-                        <span className="animate-pulse">Jadi esta pensando...</span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </ScrollArea>
-
-                {isAutoMode && hasAnalyzed && stackDecision && (
-                  <div className="px-3 pb-1 flex-shrink-0">
-                    <button
-                      onClick={handleReanalyzeStack}
-                      className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1 flex items-center justify-center gap-1.5 border border-dashed border-border rounded-md hover:border-primary/40"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      Trocar linguagem / re-analisar projeto
-                    </button>
-                  </div>
-                )}
-
-                <div className="border-t border-border p-2 flex gap-2 flex-shrink-0">
-                  <Input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder={analyzeStack.isPending ? "Aguarde a análise..." : "Pergunte algo..."}
-                    className="h-8 text-xs"
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendChat()}
-                    disabled={analyzeStack.isPending}
-                    data-testid="input-chat"
-                  />
-                  <Button
-                    size="icon"
-                    className="h-8 w-8 flex-shrink-0"
-                    onClick={handleSendChat}
-                    disabled={aiChat.isPending || analyzeStack.isPending || !chatInput.trim()}
-                    data-testid="button-send-chat"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </motion.div>
+              <VibeChatPanel
+                projectName={project.name}
+                currentFileName={currentFile?.name}
+                language={project.language}
+                stackDecision={stackDecision}
+                hasAnalyzed={hasAnalyzed}
+                isAnalyzing={analyzeStack.isPending}
+                initialMessages={chatMessages}
+                onMessagesChange={setChatMessages}
+                onLiveCodeUpdate={handleLiveCodeUpdate}
+                onClose={() => setShowChat(false)}
+                onReanalyze={handleReanalyze}
+              />
             )}
           </AnimatePresence>
         </div>

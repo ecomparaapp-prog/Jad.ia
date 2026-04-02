@@ -60,7 +60,9 @@ Routes:
 - `/api/projects/*` — CRUD projects
 - `/api/projects/:id/files/*` — CRUD project files
 - `/api/projects/:id/secrets/*` — CRUD project secrets
-- `/api/ai/chat` — AI chat (Groq)
+- `/api/ai/chat` — AI chat (Groq, non-streaming)
+- `/api/ai/stream` — **Vibe Coding SSE streaming** (Groq, token-by-token, supports vision model for images)
+- `/api/ai/analyze-stack` — Agente Analista (picks best tech stack for a project)
 - `/api/ai/generate-prompt` — prompt generator (Groq)
 - `/api/stats/dashboard` — dashboard stats
 - `/api/stats/activity` — recent activity
@@ -85,7 +87,14 @@ Features:
 - Dark/light theme toggle (ThemeProvider)
 - AuthProvider with Bearer token via localStorage
 - Code editor with line numbers, Tab key support, Ctrl+S save
-- AI chat panel (Groq via api-server)
+- **Vibe Coding** (`VibeChatPanel.tsx`): SSE streaming chat, code injects into editor in real-time
+  - Multimodal input: paste/drag images → Groq vision model (`meta-llama/llama-4-scout-17b-16e-instruct`)
+  - Long text auto-collapse: paste >600 chars → becomes a collapsible "document snippet"
+  - Quick commands: `/setup`, `/fix`, `/style`, `/explain`, `/test`, `/refactor`
+  - Status indicators: "Arquitetando...", "Escrevendo código..." cycling during streaming
+  - Glassmorphism design (backdrop-blur, semi-transparent panels)
+  - Code blocks auto-detected and auto-saved to current file after 1.5s debounce
+- **Agente Analista**: auto-detects best tech stack for "Automático" language projects
 - File manager sidebar
 - Secrets manager sidebar
 - Git tab (placeholder)
