@@ -36,33 +36,44 @@ async function searchUnsplash(query: string, count = 3): Promise<string[]> {
   }
 }
 
-function getPicsumUrls(query: string, count = 3): string[] {
-  const seed = query.toLowerCase().replace(/\s+/g, "-");
-  return Array.from({ length: count }, (_, i) => `${PICSUM_BASE}/800/450?random=${seed}-${i}`);
-}
-
-async function searchFreeSound(query: string, count = 3): Promise<Array<{ name: string; url: string; preview: string }>> {
-  const apiKey = process.env.FREESOUND_API_KEY;
+async function searchPixabayImages(query: string, count = 3): Promise<string[]> {
+  const apiKey = process.env.PIXABAY_API_KEY;
   if (!apiKey) return [];
 
   try {
-    const res = await fetch(
-      `https://freesound.org/apiv2/search/text/?query=${encodeURIComponent(query)}&page_size=${count}&fields=id,name,previews&token=${apiKey}`,
-    );
+    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=${count}&safesearch=true`;
+    const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json() as {
-      results?: Array<{
-        id: number;
-        name: string;
-        previews?: { "preview-hq-mp3"?: string; "preview-lq-mp3"?: string };
-      }>;
+      hits?: Array<{ webformatURL?: string; largeImageURL?: string }>;
     };
+    return (data.hits ?? [])
+      .map((h) => h.largeImageURL ?? h.webformatURL)
+      .filter((u): u is string => !!u);
+  } catch {
+    return [];
+  }
+}
 
-    return (data.results ?? [])
+async function searchPixabaySounds(query: string, count = 3): Promise<Array<{ name: string; url: string; preview: string }>> {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const url = `https://pixabay.com/api/sounds/?key=${apiKey}&q=${encodeURIComponent(query)}&per_page=${count}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      logger.warn({ status: res.status, query }, "Pixabay sounds API falhou");
+      return [];
+    }
+    const data = await res.json() as {
+      hits?: Array<{ id: number; tags: string; audio?: { src?: string }; url?: string }>;
+    };
+    return (data.hits ?? [])
       .map((s) => ({
-        name: s.name,
-        url: `https://freesound.org/s/${s.id}/`,
-        preview: s.previews?.["preview-hq-mp3"] ?? s.previews?.["preview-lq-mp3"] ?? "",
+        name: s.tags ?? `sound-${s.id}`,
+        url: `https://pixabay.com/sound-effects/id-${s.id}/`,
+        preview: s.audio?.src ?? s.url ?? "",
       }))
       .filter((s) => s.preview !== "");
   } catch {
@@ -70,17 +81,25 @@ async function searchFreeSound(query: string, count = 3): Promise<Array<{ name: 
   }
 }
 
+function getPicsumUrls(query: string, count = 3): string[] {
+  const seed = query.toLowerCase().replace(/\s+/g, "-");
+  return Array.from({ length: count }, (_, i) => `${PICSUM_BASE}/800/450?random=${seed}-${i}`);
+}
+
+async function fetchImages(query: string, count = 3): Promise<{ urls: string[]; source: string }> {
+  let urls = await searchUnsplash(query, count);
+  if (urls.length > 0) return { urls, source: "unsplash" };
+
+  urls = await searchPixabayImages(query, count);
+  if (urls.length > 0) return { urls, source: "pixabay" };
+
+  return { urls: getPicsumUrls(query, count), source: "picsum" };
+}
+
 router.get("/api/assets/images", requireAuth, async (req, res): Promise<void> => {
   const query = String(req.query.query ?? "nature");
   const count = Math.min(Number(req.query.count ?? 3), 9);
-
-  let urls: string[] = await searchUnsplash(query, count);
-  const source = urls.length > 0 ? "unsplash" : "picsum";
-
-  if (urls.length === 0) {
-    urls = getPicsumUrls(query, count);
-  }
-
+  const { urls, source } = await fetchImages(query, count);
   res.json({ urls, source, query });
 });
 
@@ -105,8 +124,8 @@ router.get("/api/assets/sounds", requireAuth, async (req, res): Promise<void> =>
   const query = String(req.query.query ?? "notification");
   const count = Math.min(Number(req.query.count ?? 3), 9);
 
-  const sounds = await searchFreeSound(query, count);
-  const source = sounds.length > 0 ? "freesound" : "none";
+  const sounds = await searchPixabaySounds(query, count);
+  const source = sounds.length > 0 ? "pixabay" : "none";
 
   logger.info({ query, count: sounds.length, source }, "Sons buscados");
   res.json({ sounds, source, query });
@@ -127,23 +146,22 @@ router.post("/api/assets/resolve", requireAuth, async (req, res): Promise<void> 
 
   const googleFontsUrl = `https://fonts.googleapis.com/css2?${families}&display=swap`;
 
-  const imageResults: Record<string, string[]> = {};
+  const imageResults: Record<string, { urls: string[]; source: string }> = {};
   await Promise.all(
     imageQueries.slice(0, 5).map(async (query) => {
-      let urls = await searchUnsplash(query, 2);
-      if (urls.length === 0) urls = getPicsumUrls(query, 2);
-      imageResults[query] = urls;
+      const result = await fetchImages(query, 2);
+      imageResults[query] = result;
     }),
   );
 
   const soundResults: Record<string, Array<{ name: string; url: string; preview: string }>> = {};
   await Promise.all(
     (soundQueries ?? []).slice(0, 3).map(async (query) => {
-      soundResults[query] = await searchFreeSound(query, 2);
+      soundResults[query] = await searchPixabaySounds(query, 2);
     }),
   );
 
-  logger.info({ mood, imageQueries, soundQueries }, "Assets resolvidos");
+  logger.info({ mood, imageQueries, soundQueries }, "Assets resolvidos via Pixabay");
 
   res.json({
     fonts: {
@@ -153,7 +171,12 @@ router.post("/api/assets/resolve", requireAuth, async (req, res): Promise<void> 
       cssVars: `--font-heading: '${fontPair.heading.replace(/\+/g, " ")}', sans-serif; --font-body: '${fontPair.body.replace(/\+/g, " ")}', sans-serif;`,
       mood,
     },
-    images: imageResults,
+    images: Object.fromEntries(
+      Object.entries(imageResults).map(([q, r]) => [q, r.urls]),
+    ),
+    imageSources: Object.fromEntries(
+      Object.entries(imageResults).map(([q, r]) => [q, r.source]),
+    ),
     sounds: soundResults,
   });
 });
