@@ -450,11 +450,11 @@ export default function VibeChatPanel({
       animate={{ width: 360, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex-shrink-0 border-r border-white/10 flex flex-col overflow-hidden"
+      className="flex-shrink-0 border-r border-border flex flex-col overflow-hidden"
       style={{
-        background: "rgba(10, 10, 20, 0.85)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+        background: "hsl(var(--sidebar))",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
@@ -470,12 +470,12 @@ export default function VibeChatPanel({
       )}
 
       <div
-        className="flex-shrink-0 border-b border-white/10 px-4 py-3"
-        style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(10,10,20,0) 80%)" }}
+        className="flex-shrink-0 border-b border-border/60 px-4 py-3"
+        style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, transparent 80%)" }}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(139,92,246,0.25)]">
+            <div className="h-9 w-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-[0_2px_8px_hsl(var(--primary)/0.25)]">
               <Zap className="h-4.5 w-4.5 text-primary" style={{ height: "1.1rem", width: "1.1rem" }} />
             </div>
             <div>
@@ -517,7 +517,7 @@ export default function VibeChatPanel({
         {messages.length === 0 && !isAnalyzing && (
           <div className="flex flex-col items-center justify-center h-full gap-5 px-2 py-8 text-center">
             <div className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left"
-              style={{ boxShadow: "0 0 20px rgba(139,92,246,0.08) inset" }}
+              style={{ boxShadow: "inset 0 0 20px hsl(var(--primary) / 0.06)" }}
             >
               <p className="text-[11px] font-mono text-primary/80 mb-2 flex items-center gap-1.5">
                 <Zap className="h-3 w-3" />
