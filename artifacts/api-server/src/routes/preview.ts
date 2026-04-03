@@ -32,9 +32,180 @@ const CONSOLE_CAPTURE_SCRIPT = `<script>
 })();
 <\/script>`;
 
-function buildPreviewHtml(
-  files: Array<{ name: string; content: string; language: string }>,
-): string {
+type ProjectFile = { name: string; content: string; language: string };
+
+const CONFIG_FILES = new Set([
+  "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
+  "tsconfig.json", "tsconfig.node.json", "tsconfig.app.json",
+  "next.config.js", "next.config.mjs", "next.config.ts",
+  "vite.config.js", "vite.config.ts",
+  "tailwind.config.js", "tailwind.config.ts",
+  "postcss.config.js", "postcss.config.mjs",
+  ".eslintrc", ".eslintrc.js", ".eslintrc.json",
+  ".prettierrc", ".gitignore", ".env", ".env.local",
+  "README.md", "readme.md",
+]);
+
+function detectFramework(files: ProjectFile[]): string | null {
+  const names = files.map((f) => f.name);
+  const pkgFile = files.find((f) => f.name === "package.json");
+  const pkgContent = pkgFile?.content ?? "";
+
+  if (names.some((n) => n.startsWith("next.config")) || pkgContent.includes('"next"')) return "Next.js";
+  if (pkgContent.includes('"nuxt"')) return "Nuxt.js";
+  if (pkgContent.includes('"@vue/core"') || pkgContent.includes('"vue"')) return "Vue.js";
+  if (pkgContent.includes('"@angular/core"')) return "Angular";
+  if (pkgContent.includes('"svelte"')) return "Svelte";
+  if (names.some((n) => n.startsWith("vite.config")) || pkgContent.includes('"vite"')) {
+    if (pkgContent.includes('"react"') || files.some((f) => f.name.endsWith(".tsx") || f.name.endsWith(".jsx"))) {
+      return "React + Vite";
+    }
+    return "Vite";
+  }
+  if (files.some((f) => f.name.endsWith(".tsx") || f.name.endsWith(".jsx"))) return "React";
+  if (files.some((f) => f.name.endsWith(".ts") && !f.name.endsWith(".d.ts") && f.content.includes("import"))) {
+    if (pkgContent.includes('"react"') || files.some((f) => f.content.includes("from 'react'") || f.content.includes('from "react"'))) {
+      return "React";
+    }
+  }
+  return null;
+}
+
+function frameworkPreviewHtml(framework: string, files: ProjectFile[]): string {
+  const fileList = files
+    .map((f) => {
+      const ext = f.name.split(".").pop() ?? "";
+      const colorMap: Record<string, string> = {
+        ts: "#60a5fa", tsx: "#38bdf8", js: "#facc15", jsx: "#fb923c",
+        css: "#a78bfa", html: "#f87171", json: "#86efac", md: "#94a3b8",
+      };
+      const color = colorMap[ext] ?? "#94a3b8";
+      const icon = ext === "tsx" || ext === "jsx" ? "⚛" : ext === "ts" || ext === "js" ? "📄" : ext === "css" ? "🎨" : ext === "html" ? "🌐" : "📁";
+      return `<div class="file-row"><span class="file-icon">${icon}</span><span class="file-name" style="color:${color}">${f.name}</span><span class="file-lines">${f.content.split("\n").length} linhas</span></div>`;
+    })
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preview — ${framework}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080810;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(20,184,166,0.12);
+      border: 1px solid rgba(20,184,166,0.3);
+      color: #2dd4bf;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge::before { content: '⚙'; font-size: 12px; }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .tip {
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #a5b4fc;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .tip strong { color: #c7d2fe; }
+    .files-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+    .files-list {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    .file-row:last-child { border-bottom: none; }
+    .file-icon { font-size: 11px; }
+    .file-name { flex: 1; }
+    .file-lines { color: #475569; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">${framework}</div>
+    <h2>Compilação necessária</h2>
+    <p>Este projeto usa <strong>${framework}</strong>, que precisa ser compilado antes de rodar. O preview ao vivo funciona com projetos HTML/CSS/JS puros.</p>
+    <div class="tip">
+      💡 <strong>Dica:</strong> Para ver o resultado visual, peça ao Vibe Coding para gerar uma versão em <strong>HTML + Tailwind CSS (CDN)</strong> — ela roda direto no preview sem precisar de compilação.
+    </div>
+    <div class="files-header">Arquivos do projeto (${files.length})</div>
+    <div class="files-list">${fileList}</div>
+  </div>
+</body>
+</html>`;
+}
+
+function buildPreviewHtml(files: ProjectFile[]): string {
+  if (files.length === 0) {
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}</head><body style="margin:0;background:#080810;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace"><p style="color:#475569;font-size:13px">Nenhum arquivo no projeto.</p></body></html>`;
+  }
+
+  const framework = detectFramework(files);
+  if (framework) {
+    return frameworkPreviewHtml(framework, files);
+  }
+
   const htmlFile =
     files.find((f) => f.name === "index.html") ??
     files.find((f) => f.name.endsWith(".html") || f.name.endsWith(".htm"));
@@ -45,34 +216,62 @@ function buildPreviewHtml(
   );
 
   if (!htmlFile) {
-    const singleFile = files[0];
-    if (!singleFile) {
-      return `<!DOCTYPE html><html><head>${CONSOLE_CAPTURE_SCRIPT}</head><body><p style="font-family:monospace;color:#888;padding:2rem">Nenhum arquivo no projeto.</p></body></html>`;
-    }
-    const isJs = singleFile.name.endsWith(".js") || singleFile.name.endsWith(".ts");
-    const isCss = singleFile.name.endsWith(".css");
+    const appFiles = files.filter((f) => !CONFIG_FILES.has(f.name));
+    const jsApp = appFiles.find((f) => f.name.endsWith(".js"));
+    const cssApp = appFiles.find((f) => f.name.endsWith(".css"));
 
-    if (isJs) {
-      return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}<style>body{margin:0;background:#0a0a0f;color:#e0e0e0;font-family:monospace}</style></head><body><script type="module">${singleFile.content}<\/script></body></html>`;
+    if (jsApp) {
+      const extraCss = cssApp ? `<style>${cssApp.content}</style>` : "";
+      return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${CONSOLE_CAPTURE_SCRIPT}${extraCss}<style>body{margin:0;background:#fff}</style></head><body><script type="module">${jsApp.content}<\/script></body></html>`;
     }
-    if (isCss) {
-      return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}<style>${singleFile.content}</style></head><body><div style="padding:2rem;font-family:monospace;color:#888">CSS aplicado à página.</div></body></html>`;
+    if (cssApp) {
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}<style>body{margin:0}${cssApp.content}</style></head><body style="padding:2rem;font-family:sans-serif;color:#333"><p style="color:#888;font-size:13px;font-family:monospace">CSS aplicado à página.</p></body></html>`;
     }
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}</head><body>${singleFile.content}</body></html>`;
+    const nonConfig = appFiles[0];
+    if (nonConfig) {
+      const isMarkdown = nonConfig.name.endsWith(".md");
+      const content = nonConfig.content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      if (isMarkdown) {
+        return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}<style>body{margin:0;padding:2rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1e293b;line-height:1.6;max-width:800px}pre{background:#f1f5f9;padding:1rem;border-radius:6px;overflow-x:auto;font-size:13px}</style></head><body><pre>${content}</pre></body></html>`;
+      }
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}<style>body{margin:0;background:#080810;color:#e2e8f0;font-family:monospace;font-size:13px;padding:2rem;line-height:1.6}pre{white-space:pre-wrap;word-break:break-all}</style></head><body><pre>${content}</pre></body></html>`;
+    }
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}</head><body style="margin:0;background:#080810;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace"><p style="color:#475569;font-size:13px">Nenhum arquivo renderizável encontrado.</p></body></html>`;
   }
 
   let html = htmlFile.content;
 
-  const cssBlock = cssFiles
-    .filter((f) => f.name !== htmlFile.name)
+  const existingLinkHrefs = [...html.matchAll(/href="([^"]+\.css)"/g)].map((m) => m[1]);
+  const existingSrcSrcs = [...html.matchAll(/src="([^"]+\.js)"/g)].map((m) => m[1]);
+
+  const cssToInject = cssFiles
+    .filter((f) => f.name !== htmlFile.name && !existingLinkHrefs.includes(f.name) && !existingLinkHrefs.includes(`./${f.name}`))
     .map((f) => `<style>/* ${f.name} */\n${f.content}</style>`)
     .join("\n");
 
-  const jsBlock = jsFiles
-    .filter((f) => f.name !== htmlFile.name)
+  const jsToInject = jsFiles
+    .filter((f) => f.name !== htmlFile.name && !existingSrcSrcs.includes(f.name) && !existingSrcSrcs.includes(`./${f.name}`))
     .map((f) => `<script>/* ${f.name} */\n${f.content}<\/script>`)
     .join("\n");
+
+  const localLinkRe = /(<link[^>]+href=")(?!https?:\/\/|\/\/|data:)([^"]+\.css)("[^>]*>)/g;
+  html = html.replace(localLinkRe, (_match, before, href, after) => {
+    const cssFile = cssFiles.find((f) => f.name === href || f.name === href.replace("./", ""));
+    if (cssFile) return `<style>/* ${cssFile.name} */\n${cssFile.content}</style>`;
+    return before + href + after;
+  });
+
+  const localScriptRe = /(<script[^>]+src=")(?!https?:\/\/|\/\/|data:)([^"]+\.js)("[^>]*><\/script>)/g;
+  html = html.replace(localScriptRe, (_match, before, src, after) => {
+    const jsFile = jsFiles.find((f) => f.name === src || f.name === src.replace("./", ""));
+    if (jsFile) return `<script>/* ${jsFile.name} */\n${jsFile.content}<\/script>`;
+    return before + src + after;
+  });
 
   if (html.includes("<head>")) {
     html = html.replace("<head>", `<head>${CONSOLE_CAPTURE_SCRIPT}`);
@@ -82,16 +281,16 @@ function buildPreviewHtml(
     html = CONSOLE_CAPTURE_SCRIPT + html;
   }
 
-  if (cssBlock) {
+  if (cssToInject) {
     html = html.includes("</head>")
-      ? html.replace("</head>", `${cssBlock}\n</head>`)
-      : cssBlock + "\n" + html;
+      ? html.replace("</head>", `${cssToInject}\n</head>`)
+      : cssToInject + "\n" + html;
   }
 
-  if (jsBlock) {
+  if (jsToInject) {
     html = html.includes("</body>")
-      ? html.replace("</body>", `${jsBlock}\n</body>`)
-      : html + "\n" + jsBlock;
+      ? html.replace("</body>", `${jsToInject}\n</body>`)
+      : html + "\n" + jsToInject;
   }
 
   return html;
