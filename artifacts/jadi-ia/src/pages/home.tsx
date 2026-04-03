@@ -15,6 +15,17 @@ const BG = "#F4F5F7";
 const BG_ALT = "#ECEEF2";
 const BORDER = "rgba(0,0,0,0.07)";
 
+const LOGO_GRADIENT = [
+  "#00897B",
+  "#498067",
+  "#927753",
+  "#DB6E3F",
+  "#FF5C4A",
+  "#FF3D78",
+  "#FF1FA1",
+  "#FF00CC",
+];
+
 const services = [
   { icon: Bot, title: "Vibe Coding IA", desc: "Descreva em português e a IA gera código em tempo real.", accent: "primary" },
   { icon: Globe, title: "Sites & Web Apps", desc: "React, Vue, Next.js e HTML/CSS com preview ao vivo.", accent: "primary" },
@@ -251,20 +262,30 @@ export default function Home() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={fadeUp}
-                whileHover={{ y: -4, scale: 1.06 }}
+                whileHover={{ y: -5, scale: 1.07 }}
               >
                 <div
                   className="flex flex-col items-center gap-2 px-5 py-4"
                   style={{
                     background: "rgba(255,255,255,0.9)",
                     border: `1px solid ${BORDER}`,
+                    borderLeft: `3px solid ${LOGO_GRADIENT[i]}`,
                     borderRadius: "1.25rem",
                     minWidth: "90px",
                     boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                   }}
                 >
-                  <Logo size={32} />
-                  <span className="text-xs text-gray-400 font-medium" style={{ fontFamily: "var(--app-font-mono)" }}>{name}</span>
+                  <div style={{ position: "relative", display: "inline-block", borderRadius: "0.5rem", overflow: "hidden" }}>
+                    <Logo size={34} />
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: LOGO_GRADIENT[i],
+                      mixBlendMode: "color",
+                      borderRadius: "0.5rem",
+                    }} />
+                  </div>
+                  <span className="text-xs font-semibold" style={{ fontFamily: "var(--app-font-mono)", color: LOGO_GRADIENT[i] }}>{name}</span>
                 </div>
               </motion.div>
             ))}

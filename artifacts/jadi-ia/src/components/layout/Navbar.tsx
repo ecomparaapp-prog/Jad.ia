@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { Link, useLocation } from 'wouter';
 import { LogOut, User, Moon, Sun, Monitor, ChevronDown } from 'lucide-react';
@@ -10,8 +11,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/components/theme-provider';
-import logoBranca from '@assets/logo_sem_fundo_branca_1775101885588.jpg';
-import logo from '@assets/logo_sem_fundo_1775101885589.png';
+import logoSemFundo from '@assets/logo_sem_fundo_1775182427102.png';
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -27,16 +27,14 @@ export function Navbar() {
         >
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div
-              className="glass-card-sm h-9 w-9 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
-              style={{ borderRadius: '0.875rem' }}
-            >
-              <img
-                src={theme === 'dark' ? logoBranca : logo}
-                alt="Jad.ia Logo"
-                className="h-6 w-6 object-contain"
-              />
-            </div>
+            <motion.img
+              src={logoSemFundo}
+              alt="Jad.ia Logo"
+              className="object-contain flex-shrink-0"
+              style={{ height: '60px', width: '60px', background: 'transparent' }}
+              whileHover={{ scale: 1.06 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            />
             <span
               className="font-bold text-base tracking-tight hidden sm:block"
               style={{ fontFamily: 'var(--app-font-serif)' }}
