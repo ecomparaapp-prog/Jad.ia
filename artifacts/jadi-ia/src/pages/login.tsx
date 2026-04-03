@@ -53,7 +53,7 @@ export default function Login() {
   }
 
   function fillTestCredentials() {
-    form.setValue("email", "admin@jad.ia");
+    form.setValue("email", "admin@jadi.ia");
     form.setValue("password", "admin123");
   }
 
@@ -141,7 +141,7 @@ export default function Login() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
-              Email: <span className="text-foreground font-medium">admin@jad.ia</span>
+              Email: <span className="text-foreground font-medium">admin@jadi.ia</span>
             </p>
             <p className="text-xs text-muted-foreground" style={{ fontFamily: 'var(--app-font-mono)' }}>
               Senha: <span className="text-foreground font-medium">admin123</span>
