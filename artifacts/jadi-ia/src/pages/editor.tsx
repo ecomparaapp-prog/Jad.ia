@@ -42,12 +42,14 @@ import {
   Eye,
   EyeOff,
   Layers,
+  ImageIcon,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import VibeChatPanel from "@/components/VibeChatPanel";
 import PreviewPanel from "@/components/PreviewPanel";
 import GeneratePromptModal from "@/components/GeneratePromptModal";
+import ImagePickerModal from "@/components/ImagePickerModal";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -106,6 +108,7 @@ export default function Editor() {
   const [vibeMode, setVibeMode] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   const [previewRevision, setPreviewRevision] = useState(0);
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [pendingPrefill, setPendingPrefill] = useState<string>("");
@@ -444,6 +447,17 @@ export default function Editor() {
         >
           <Wand2 className="h-3.5 w-3.5" />
           Gerar Prompt
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowImagePicker(true)}
+          className="h-7 text-xs gap-1 hidden sm:flex"
+          title="Buscar imagens do Pixabay e Unsplash"
+        >
+          <ImageIcon className="h-3.5 w-3.5" />
+          Imagens
         </Button>
 
         <Button
@@ -805,6 +819,23 @@ export default function Editor() {
         onUsePrompt={handleUsePromptInChat}
       />
     )}
+
+    <ImagePickerModal
+      open={showImagePicker}
+      onClose={() => setShowImagePicker(false)}
+      token={token}
+      onInsert={(url, description) => {
+        const currentLang = selectedFileId
+          ? (files?.find((f) => f.id === selectedFileId)?.language ?? "html")
+          : "html";
+        const isHtmlLike = ["html", "css", "jsx", "tsx"].includes(currentLang);
+        const toInsert = isHtmlLike
+          ? `<img src="${url}" alt="${description}" />`
+          : url;
+        setEditingContent((prev) => prev + "\n" + toInsert);
+        toast({ title: "Imagem inserida!", description: "URL adicionada ao final do arquivo." });
+      }}
+    />
     </>
   );
 }

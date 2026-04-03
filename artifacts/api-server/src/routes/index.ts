@@ -9,6 +9,7 @@ import statsRouter from "./stats";
 import previewRouter from "./preview";
 import assetsRouter from "./assets";
 import contextRouter from "./context";
+import imagesRouter from "./images";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(statsRouter);
 router.use(previewRouter);
 router.use(assetsRouter);
 router.use(contextRouter);
+router.use(imagesRouter);
 
 export default router;
