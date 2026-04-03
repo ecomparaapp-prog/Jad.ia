@@ -18,6 +18,9 @@ import {
   ImageIcon,
   Volume2,
   Package,
+  Sparkles,
+  Zap,
+  Send,
 } from "lucide-react";
 
 interface Attachment {
@@ -97,15 +100,15 @@ const QUICK_COMMANDS = [
 ];
 
 const ANALYST_STATUS = [
-  "SISTEMA ANALISTA — Processando requisitos...",
-  "Avaliando arquitetura de software...",
+  "Processando requisitos...",
+  "Avaliando arquitetura...",
   "Gerando diagnóstico técnico...",
-  "Estruturando plano de implementação...",
+  "Estruturando plano...",
   "Finalizando análise...",
 ];
 
 const BUILDER_STATUS = [
-  "SISTEMA CONSTRUTOR — Inicializando...",
+  "Inicializando Vibe Coding...",
   "Arquitetando componentes...",
   "Escrevendo código-fonte...",
   "Aplicando estrutura de arquivos...",
@@ -140,12 +143,6 @@ REGRAS OBRIGATÓRIAS DE ASSETS:
 - SONS: Se o contexto incluir [ASSETS] com URLs de som (preview MP3), use <audio> elements com src apontando para as URLs fornecidas.
 - Iconify CDN alternativo para ícones: <span class="iconify" data-icon="mdi:home"></span> com <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
 `;
-
-const OLIVE_GREEN = "#414833";
-const TERRACOTTA = "#582f0e";
-const OLIVE_LIGHT = "rgba(65,72,51,0.15)";
-const TERRACOTTA_LIGHT = "rgba(88,47,14,0.15)";
-const BEIGE = "#f5f0e8";
 
 function extractAllCodeBlocks(text: string): Array<{ code: string; lang: string }> {
   const regex = /```(\w*)\n([\s\S]*?)```/g;
@@ -192,7 +189,27 @@ function stripCodeFences(content: string): string {
     .replace(/\n?```\s*$/, "");
 }
 
-function CodeBlock({ content, lang }: { content: string; lang: string }) {
+function AnalysisCodeBlock({ content, lang }: { content: string; lang: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="relative rounded-lg overflow-hidden border border-green-200 bg-green-50 my-2">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-green-100 border-b border-green-200">
+        <span className="text-green-700 text-[10px] font-mono uppercase tracking-wider">{lang || "código"}</span>
+        <button onClick={copy} className="flex items-center gap-1 text-green-600 hover:text-green-800 transition-colors text-[10px] font-mono">
+          {copied ? <><Check className="h-3 w-3" /><span>Copiado</span></> : <><Copy className="h-3 w-3" /><span>Copiar</span></>}
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto leading-relaxed text-[11px] text-green-900 font-mono">{content}</pre>
+    </div>
+  );
+}
+
+function VibeCodeBlock({ content, lang }: { content: string; lang: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(content);
@@ -203,22 +220,8 @@ function CodeBlock({ content, lang }: { content: string; lang: string }) {
     <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/40 my-2">
       <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 border-b border-white/10">
         <span className="text-muted-foreground text-[10px] font-mono uppercase tracking-wider">{lang || "código"}</span>
-        <button
-          onClick={copy}
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-[10px] font-mono"
-          title="Copiar código"
-        >
-          {copied ? (
-            <>
-              <Check className="h-3 w-3 text-green-400" />
-              <span className="text-green-400">Copiado</span>
-            </>
-          ) : (
-            <>
-              <Copy className="h-3 w-3" />
-              <span>Copiar</span>
-            </>
-          )}
+        <button onClick={copy} className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-[10px] font-mono">
+          {copied ? <><Check className="h-3 w-3 text-teal-400" /><span className="text-teal-400">Copiado</span></> : <><Copy className="h-3 w-3" /><span>Copiar</span></>}
         </button>
       </div>
       <pre className="p-3 overflow-x-auto leading-relaxed text-[11px] text-foreground/90 font-mono">{content}</pre>
@@ -226,66 +229,13 @@ function CodeBlock({ content, lang }: { content: string; lang: string }) {
   );
 }
 
-function AgentBadge({ type }: { type: "analise" | "construcao" }) {
-  if (type === "analise") {
-    return (
-      <div
-        className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-semibold uppercase tracking-widest mb-1.5"
-        style={{ background: OLIVE_LIGHT, color: OLIVE_GREEN, border: `1px solid ${OLIVE_GREEN}40` }}
-      >
-        <Search className="h-2.5 w-2.5" />
-        SISTEMA ANALISTA
-      </div>
-    );
-  }
-  return (
-    <div
-      className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-semibold uppercase tracking-widest mb-1.5"
-      style={{ background: TERRACOTTA_LIGHT, color: TERRACOTTA, border: `1px solid ${TERRACOTTA}40` }}
-    >
-      <Terminal className="h-2.5 w-2.5" />
-      SISTEMA CONSTRUTOR
-    </div>
-  );
-}
-
-function AssetLogPanel({ entries }: { entries: AssetLogEntry[] }) {
-  if (entries.length === 0) return null;
-  return (
-    <div className="mx-3 mb-2 rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(88,47,14,0.06)" }}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
-        <Package className="h-3.5 w-3.5" style={{ color: "#a0622a" }} />
-        <span className="text-[11px] font-mono font-medium" style={{ color: "#a0622a" }}>Log de Ativos</span>
-      </div>
-      <div className="p-2 space-y-1 max-h-36 overflow-y-auto">
-        {entries.map((entry, i) => (
-          <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg">
-            {entry.type === "image" && <ImageIcon className="h-3 w-3 text-blue-400 flex-shrink-0" />}
-            {entry.type === "font" && <Globe className="h-3 w-3 text-purple-400 flex-shrink-0" />}
-            {entry.type === "sound" && <Volume2 className="h-3 w-3 text-yellow-400 flex-shrink-0" />}
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-mono text-muted-foreground/70 mr-1">{entry.label}:</span>
-              <span className="text-[10px] font-mono text-foreground/80 truncate block">{entry.value}</span>
-            </div>
-            {entry.source && (
-              <span className="text-[9px] font-mono px-1 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "#a0622a" }}>
-                {entry.source}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function VibeFilesProgress({ files }: { files: VibeFile[] }) {
   if (files.length === 0) return null;
   return (
-    <div className="mx-3 mb-2 rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(0,137,123,0.06)" }}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
+    <div className="mx-2 mb-2 rounded-xl border border-teal-500/20 overflow-hidden" style={{ background: "rgba(0,137,123,0.06)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-teal-500/15">
         <FolderOpen className="h-3.5 w-3.5 text-teal-400" />
-        <span className="text-[11px] font-mono text-teal-400 font-medium">Motor de Escrita de Arquivos</span>
+        <span className="text-[11px] font-mono text-teal-400 font-medium">Motor de Arquivos</span>
       </div>
       <div className="p-2 space-y-1">
         {files.map((f) => (
@@ -297,19 +247,36 @@ function VibeFilesProgress({ files }: { files: VibeFile[] }) {
             ) : (
               <div className="h-3 w-3 rounded-full border border-white/20 flex-shrink-0" />
             )}
-            <span
-              className={`text-[10px] font-mono flex-1 truncate ${
-                f.status === "done"
-                  ? "text-green-400"
-                  : f.status === "writing"
-                    ? "text-teal-300"
-                    : "text-muted-foreground/60"
-              }`}
-            >
+            <span className={`text-[10px] font-mono flex-1 truncate ${f.status === "done" ? "text-green-400" : f.status === "writing" ? "text-teal-300" : "text-muted-foreground/60"}`}>
               {f.name}
             </span>
             {f.status === "done" && <span className="text-[9px] font-mono text-green-500/70">salvo</span>}
             {f.status === "writing" && <span className="text-[9px] font-mono text-teal-400/70 animate-pulse">escrevendo...</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssetLogPanel({ entries }: { entries: AssetLogEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mx-2 mb-2 rounded-xl border border-orange-500/20 overflow-hidden" style={{ background: "rgba(249,115,22,0.05)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-orange-500/15">
+        <Package className="h-3.5 w-3.5 text-orange-400" />
+        <span className="text-[11px] font-mono font-medium text-orange-400">Log de Ativos</span>
+      </div>
+      <div className="p-2 space-y-1 max-h-36 overflow-y-auto">
+        {entries.map((entry, i) => (
+          <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg">
+            {entry.type === "image" && <ImageIcon className="h-3 w-3 text-blue-400 flex-shrink-0" />}
+            {entry.type === "font" && <Globe className="h-3 w-3 text-purple-400 flex-shrink-0" />}
+            {entry.type === "sound" && <Volume2 className="h-3 w-3 text-yellow-400 flex-shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-mono text-muted-foreground/70 mr-1">{entry.label}:</span>
+              <span className="text-[10px] font-mono text-foreground/80 truncate block">{entry.value}</span>
+            </div>
           </div>
         ))}
       </div>
@@ -335,21 +302,26 @@ export default function VibeChatPanel({
   onPrefillConsumed,
 }: VibeChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [input, setInput] = useState("");
+  const [analyzeInput, setAnalyzeInput] = useState("");
+  const [vibeInput, setVibeInput] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [statusText, setStatusText] = useState("");
-  const [showCommands, setShowCommands] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [statusIndex, setStatusIndex] = useState(0);
-  const [vibeFiles, setVibeFiles] = useState<VibeFile[]>([]);
   const [activeAgent, setActiveAgent] = useState<"analise" | "construcao">("construcao");
+  const [statusText, setStatusText] = useState("");
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [showAnalyzeCommands, setShowAnalyzeCommands] = useState(false);
+  const [showVibeCommands, setShowVibeCommands] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [vibeFiles, setVibeFiles] = useState<VibeFile[]>([]);
   const [providerSwitchMsg, setProviderSwitchMsg] = useState("");
   const [analysisContext, setAnalysisContext] = useState<string>("");
   const [assetLog, setAssetLog] = useState<AssetLogEntry[]>([]);
   const [isFetchingAssets, setIsFetchingAssets] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const analyzeTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const vibeTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const analyzeScrollRef = useRef<HTMLDivElement>(null);
+  const vibeScrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
@@ -357,11 +329,8 @@ export default function VibeChatPanel({
 
   useEffect(() => {
     if (prefillInput && prefillInput.trim()) {
-      setInput(prefillInput);
-      setTimeout(() => {
-        textareaRef.current?.focus();
-        autoResize();
-      }, 100);
+      setAnalyzeInput(prefillInput);
+      setVibeInput(prefillInput);
       onPrefillConsumed?.();
     }
   }, [prefillInput]);
@@ -379,8 +348,11 @@ export default function VibeChatPanel({
   }, [messages, isStreaming]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (analyzeScrollRef.current) {
+      analyzeScrollRef.current.scrollTop = analyzeScrollRef.current.scrollHeight;
+    }
+    if (vibeScrollRef.current) {
+      vibeScrollRef.current.scrollTop = vibeScrollRef.current.scrollHeight;
     }
   }, [messages, isStreaming, vibeFiles]);
 
@@ -395,9 +367,7 @@ export default function VibeChatPanel({
       if (statusTimerRef.current) clearInterval(statusTimerRef.current);
       setStatusText("");
     }
-    return () => {
-      if (statusTimerRef.current) clearInterval(statusTimerRef.current);
-    };
+    return () => { if (statusTimerRef.current) clearInterval(statusTimerRef.current); };
   }, [isStreaming, activeAgent]);
 
   useEffect(() => {
@@ -405,110 +375,71 @@ export default function VibeChatPanel({
     if (isStreaming) setStatusText(statusList[statusIndex]);
   }, [statusIndex, isStreaming, activeAgent]);
 
-  const autoResize = () => {
-    const ta = textareaRef.current;
+  const autoResizeAnalyze = () => {
+    const ta = analyzeTextareaRef.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 180) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+  };
+
+  const autoResizeVibe = () => {
+    const ta = vibeTextareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
   };
 
   const addAttachment = useCallback((att: Omit<Attachment, "id">) => {
     setAttachments((prev) => [...prev, { ...att, id: Math.random().toString(36).slice(2) }]);
   }, []);
 
-  const handlePaste = useCallback(
-    (e: ClipboardEvent<HTMLTextAreaElement>) => {
-      const items = Array.from(e.clipboardData.items);
-      const imageItem = items.find((i) => i.type.startsWith("image/"));
-      if (imageItem) {
-        e.preventDefault();
-        const blob = imageItem.getAsFile();
-        if (!blob) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const url = ev.target?.result as string;
-          addAttachment({ type: "image", preview: url, content: url });
-        };
-        reader.readAsDataURL(blob);
-        return;
-      }
-      const text = e.clipboardData.getData("text");
-      if (text.length > 600) {
-        e.preventDefault();
-        addAttachment({ type: "snippet", preview: text.slice(0, 60) + "…", content: text });
-      }
-    },
-    [addAttachment],
-  );
-
-  const handleDrop = useCallback(
-    (e: DragEvent<HTMLDivElement>) => {
+  const handlePaste = useCallback((e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find((i) => i.type.startsWith("image/"));
+    if (imageItem) {
       e.preventDefault();
-      setIsDragging(false);
-      const files = Array.from(e.dataTransfer.files);
-      files.forEach((file) => {
-        if (file.type.startsWith("image/")) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const url = ev.target?.result as string;
-            addAttachment({ type: "image", preview: url, content: url });
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    },
-    [addAttachment],
-  );
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
-    setInput(val);
-    autoResize();
-    setShowCommands(val.startsWith("/") && val.length <= 20 && !val.includes(" "));
-  };
-
-  const applyCommand = (cmd: string) => {
-    setInput(cmd + " ");
-    setShowCommands(false);
-    textareaRef.current?.focus();
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend(activeAgent);
+      const blob = imageItem.getAsFile();
+      if (!blob) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => addAttachment({ type: "image", preview: ev.target?.result as string, content: ev.target?.result as string });
+      reader.readAsDataURL(blob);
+      return;
     }
-    if (e.key === "Escape") setShowCommands(false);
-  };
+    const text = e.clipboardData.getData("text");
+    if (text.length > 600) {
+      e.preventDefault();
+      addAttachment({ type: "snippet", preview: text.slice(0, 60) + "…", content: text });
+    }
+  }, [addAttachment]);
 
-  const buildUserContent = (): string | Array<unknown> => {
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    files.forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (ev) => addAttachment({ type: "image", preview: ev.target?.result as string, content: ev.target?.result as string });
+        reader.readAsDataURL(file);
+      }
+    });
+  }, [addAttachment]);
+
+  const buildUserContent = (inputText: string): string | Array<unknown> => {
     const imageAttachments = attachments.filter((a) => a.type === "image");
     const snippetAttachments = attachments.filter((a) => a.type === "snippet");
-
-    const textParts = [input.trim()];
-    snippetAttachments.forEach((s, i) => {
-      textParts.push(`\n\n[Documento ${i + 1}]:\n${s.content}`);
-    });
+    const textParts = [inputText.trim()];
+    snippetAttachments.forEach((s, i) => { textParts.push(`\n\n[Documento ${i + 1}]:\n${s.content}`); });
     const fullText = textParts.join("");
-
     if (imageAttachments.length === 0) return fullText;
-
-    return [
-      { type: "text", text: fullText },
-      ...imageAttachments.map((a) => ({
-        type: "image_url",
-        image_url: { url: a.content },
-      })),
-    ];
+    return [{ type: "text", text: fullText }, ...imageAttachments.map((a) => ({ type: "image_url", image_url: { url: a.content } }))];
   };
 
   function processVibeStream(text: string) {
     if (!vibeMode || !onFileWrite) return;
-
     const completedRegex = /===FILE: ([^\n=]+)===\n([\s\S]*?)===END_FILE===/g;
     let match;
     const newlyCompleted: string[] = [];
-
     while ((match = completedRegex.exec(text)) !== null) {
       const filename = match[1].trim();
       const content = match[2];
@@ -518,7 +449,6 @@ export default function VibeChatPanel({
         onFileWrite(filename, stripCodeFences(content));
       }
     }
-
     if (newlyCompleted.length > 0) {
       setVibeFiles((prev) => {
         const updated = [...prev];
@@ -530,312 +460,211 @@ export default function VibeChatPanel({
         return updated;
       });
     }
-
-    const fileStartRegex = /===FILE: ([^\n=]+)===/g;
-    let lastFileMatch: RegExpExecArray | null = null;
-    let m: RegExpExecArray | null;
-    while ((m = fileStartRegex.exec(text)) !== null) lastFileMatch = m;
-
-    if (lastFileMatch) {
-      const filename = lastFileMatch[1].trim();
-      if (!processedFilesRef.current.has(filename)) {
-        const markerFull = `===FILE: ${filename}===`;
-        const markerPos = text.lastIndexOf(markerFull);
-        if (markerPos >= 0) {
-          const contentStart = markerPos + markerFull.length;
-          const afterContent = text.slice(contentStart);
-          const endMarkerPos = afterContent.indexOf("===END_FILE===");
-          const currentContent = endMarkerPos >= 0 ? afterContent.slice(0, endMarkerPos) : afterContent;
-          const ext = filename.split(".").pop() || "";
-          const cleanContent = stripCodeFences(currentContent.replace(/^\n/, ""));
-          onLiveCodeUpdate(cleanContent, ext);
-
-          setVibeFiles((prev) => {
-            if (!prev.find((f) => f.name === filename)) return [...prev, { name: filename, status: "writing" }];
-            return prev.map((f) => (f.name === filename ? { ...f, status: "writing" } : f));
-          });
-
-          setStatusText(`Escrevendo ${filename}...`);
+    const inProgressRegex = /===FILE: ([^\n=]+)===\n((?!===END_FILE===)[\s\S]*)$/;
+    const inProgressMatch = inProgressRegex.exec(text);
+    if (inProgressMatch) {
+      const name = inProgressMatch[1].trim();
+      setVibeFiles((prev) => {
+        if (prev.some((f) => f.name === name)) {
+          return prev.map((f) => f.name === name && f.status !== "done" ? { ...f, status: "writing" } : f);
         }
-      }
+        return [...prev, { name, status: "writing" }];
+      });
     }
   }
 
-  const fetchAndResolveAssets = useCallback(async (userMessage: string): Promise<{ assetContext: string; entries: AssetLogEntry[] }> => {
-    const token = localStorage.getItem("token");
-    const words = userMessage.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
-    const imageQueries = words.slice(0, 2).map((w) => `${w} modern design`);
-    const soundQueries = ["button click", "notification"];
-    const fontMood = stackDecision
-      ? ["modern", "tech", "bold", "minimal", "creative", "editorial", "elegant", "corporate"].find((m) =>
-          stackDecision.framework?.toLowerCase().includes(m) ||
-          stackDecision.projectType?.toLowerCase().includes(m),
-        ) ?? "modern"
-      : "modern";
-
-    try {
-      setIsFetchingAssets(true);
-      const res = await fetch("/api/assets/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ imageQueries, fontMood, soundQueries }),
-      });
-      if (!res.ok) return { assetContext: "", entries: [] };
-
-      const data: ResolvedAssets = await res.json();
-      const entries: AssetLogEntry[] = [];
-
-      entries.push({
-        type: "font",
-        label: "Tipografia",
-        value: `${data.fonts.heading} (heading) · ${data.fonts.body} (body)`,
-        source: "Google Fonts",
-      });
-
-      Object.entries(data.images).forEach(([query, urls]) => {
-        urls.slice(0, 1).forEach((url) => {
-          entries.push({ type: "image", label: query, value: url, source: "Unsplash" });
-        });
-      });
-
-      Object.entries(data.sounds).forEach(([query, sounds]) => {
-        sounds.slice(0, 1).forEach((s) => {
-          entries.push({ type: "sound", label: query, value: s.name, source: "FreeSound" });
-        });
-      });
-
-      setAssetLog(entries);
-
-      const imageLines = Object.entries(data.images)
-        .map(([q, urls]) => `  - "${q}": ${urls.slice(0, 2).join(", ")}`)
-        .join("\n");
-      const soundLines = Object.entries(data.sounds)
-        .map(([q, sounds]) => `  - "${q}": ${sounds.slice(0, 1).map((s) => s.preview).join(", ")}`)
-        .join("\n");
-
-      const assetContext = `\n\n[ASSETS PARA USAR NO CÓDIGO]
-Fontes Google: ${data.fonts.googleFontsUrl}
-CSS Vars: ${data.fonts.cssVars}
-Imagens (use estas URLs diretamente):
-${imageLines}
-Sons (URLs de preview MP3):
-${soundLines || "  - Nenhum son disponível"}`;
-
-      return { assetContext, entries };
-    } catch {
-      return { assetContext: "", entries: [] };
-    } finally {
-      setIsFetchingAssets(false);
+  async function fetchAssets(userText: string, resolvedAssets: ResolvedAssets) {
+    const keywords = userText.toLowerCase();
+    const needsImages = /imagem|foto|background|hero|banner|ilustra|picture|photo/i.test(keywords);
+    const newLog: AssetLogEntry[] = [];
+    if (resolvedAssets.fonts?.googleFontsUrl) {
+      newLog.push({ type: "font", label: "Fonte", value: `${resolvedAssets.fonts.heading} + ${resolvedAssets.fonts.body}`, source: "Google Fonts" });
     }
-  }, [stackDecision]);
-
-  const handleSend = async (taskType: "analise" | "construcao" = "construcao", overrideInput?: string) => {
-    const trimmed = (overrideInput ?? input).trim();
-    if (!trimmed && attachments.length === 0) return;
-    if (isStreaming) return;
-
-    setActiveAgent(taskType);
-    setProviderSwitchMsg("");
-
-    const userContent = buildUserContent();
-    const userMsg: ChatMessage = {
-      role: "user",
-      content: typeof userContent === "string" ? userContent : trimmed || "[imagem anexada]",
-      attachments: [...attachments],
-    };
-
-    let contextPrefix = "";
-    if (taskType === "construcao" && analysisContext) {
-      contextPrefix = `[Contexto do Analista]:\n${analysisContext}\n\n[Instrução do usuário]:\n`;
+    if (needsImages) {
+      const categories = Object.keys(resolvedAssets.images ?? {});
+      for (const cat of categories) {
+        const urls = resolvedAssets.images[cat] ?? [];
+        urls.slice(0, 3).forEach((url) => {
+          newLog.push({ type: "image", label: cat, value: url.split("/").pop() ?? url, source: "Unsplash" });
+        });
+      }
     }
+    setAssetLog(newLog);
+  }
 
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setInput("");
-    setAttachments([]);
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
-
-    setVibeFiles([]);
+  async function streamFromAPI(
+    inputText: string,
+    isAnalysisMode: boolean,
+    customSystemPrompt?: string,
+  ) {
+    if ((!inputText.trim() && attachments.length === 0) || isAnalyzing) return;
+    const agentType = isAnalysisMode ? "analise" : "construcao";
+    setActiveAgent(agentType);
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     processedFilesRef.current = new Set();
 
-    let resolvedAssetContext = "";
-    if (vibeMode && taskType === "construcao" && trimmed) {
-      const { assetContext } = await fetchAndResolveAssets(trimmed);
-      resolvedAssetContext = assetContext;
+    const userContent = buildUserContent(inputText);
+    const userMsg: ChatMessage = {
+      role: "user",
+      content: typeof userContent === "string" ? userContent : (userContent[0] as { text: string }).text,
+      attachments: attachments.length > 0 ? [...attachments] : undefined,
+    };
+
+    const updatedMessages = [...messages, userMsg];
+    const assistantMsg: ChatMessage = { role: "assistant", content: "", agentType, isStreaming: true };
+    setMessages([...updatedMessages, assistantMsg]);
+    setIsStreaming(true);
+    if (isAnalysisMode) setAnalyzeInput(""); else setVibeInput("");
+    setAttachments([]);
+    setVibeFiles([]);
+    setAssetLog([]);
+
+    let resolvedAssets: ResolvedAssets | null = null;
+    let assetsContext = "";
+
+    if (!isAnalysisMode && vibeMode) {
+      setIsFetchingAssets(true);
+      try {
+        const assetsRes = await fetch("/api/ai/resolve-assets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortRef.current.signal,
+          body: JSON.stringify({ projectDescription: inputText }),
+        });
+        if (assetsRes.ok) {
+          resolvedAssets = await assetsRes.json() as ResolvedAssets;
+          if (resolvedAssets) {
+            await fetchAssets(inputText, resolvedAssets);
+            const fontsCtx = resolvedAssets.fonts?.googleFontsUrl
+              ? `[ASSETS]\nTipografia: heading=${resolvedAssets.fonts.heading}, body=${resolvedAssets.fonts.body}\nGoogle Fonts URL: ${resolvedAssets.fonts.googleFontsUrl}\nCSS vars: ${resolvedAssets.fonts.cssVars}\n`
+              : "";
+            const imgUrls = Object.values(resolvedAssets.images ?? {}).flat().slice(0, 6);
+            const imgsCtx = imgUrls.length > 0 ? `Imagens disponíveis:\n${imgUrls.join("\n")}\n` : "";
+            const soundUrls = Object.values(resolvedAssets.sounds ?? {}).flat().map((s) => s.preview).slice(0, 4);
+            const soundsCtx = soundUrls.length > 0 ? `Sons disponíveis (MP3 preview):\n${soundUrls.join("\n")}\n` : "";
+            assetsContext = fontsCtx + imgsCtx + soundsCtx;
+          }
+        }
+      } catch { /* silent */ }
+      setIsFetchingAssets(false);
     }
 
-    const assistantPlaceholder: ChatMessage = {
-      role: "assistant",
-      content: "",
-      isStreaming: true,
-      agentType: taskType,
-    };
-    setMessages([...updatedMessages, assistantPlaceholder]);
-    setIsStreaming(true);
+    const systemExtra = isAnalysisMode
+      ? (analysisContext ? `\n[CONTEXTO DE ANÁLISE ANTERIOR]\n${analysisContext}\n` : "")
+      : (vibeMode ? VIBE_SYSTEM_PROMPT : "") + (customSystemPrompt ?? "") + (analysisContext ? `\n[PLANO DE ANÁLISE]\n${analysisContext}\n` : "") + (assetsContext ? `\n${assetsContext}` : "");
 
-    const token = localStorage.getItem("token");
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
+    const hasImages = attachments.some((a) => a.type === "image");
+    const model = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : undefined;
 
-    const conversationHistory = updatedMessages
-      .filter((m) => !m.isDecision)
-      .map((m) => ({
-        role: m.role,
-        content:
-          m.role === "user" && m.attachments?.some((a) => a.type === "image")
-            ? userContent
-            : contextPrefix && m === userMsg
-              ? contextPrefix + m.content + resolvedAssetContext
-              : m === userMsg && resolvedAssetContext
-                ? m.content + resolvedAssetContext
-                : m.content,
-      }));
-
-    const effectiveLanguage =
-      language === "auto"
-        ? stackDecision
-          ? `${stackDecision.framework} (${stackDecision.language})`
-          : "auto"
-        : language;
-
-    const extraSystemPrompt = vibeMode
-      ? stackDecision?.systemPrompt
-        ? `${stackDecision.systemPrompt}\n\n${VIBE_SYSTEM_PROMPT}`
-        : VIBE_SYSTEM_PROMPT
-      : stackDecision?.systemPrompt ?? null;
+    const messagesForAPI = updatedMessages.map((m) => ({
+      role: m.role,
+      content: m.role === "user" && m.attachments?.some((a) => a.type === "image")
+        ? [{ type: "text", text: m.content }, ...m.attachments.filter((a) => a.type === "image").map((a) => ({ type: "image_url", image_url: { url: a.content } }))]
+        : m.content,
+    }));
+    if (typeof userContent !== "string") {
+      messagesForAPI[messagesForAPI.length - 1].content = userContent;
+    }
 
     try {
-      const response = await fetch("/api/ai/stream", {
+      const res = await fetch("/api/ai/stream", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        signal: abortRef.current.signal,
         body: JSON.stringify({
-          messages: conversationHistory,
-          projectContext: `Projeto: ${projectName}${currentFileName ? `, Arquivo: ${currentFileName}` : ""}`,
-          language: effectiveLanguage,
-          systemPrompt: extraSystemPrompt,
-          taskType,
+          messages: messagesForAPI,
+          systemExtra,
+          ...(model ? { model } : {}),
         }),
-        signal: ctrl.signal,
       });
 
-      if (!response.ok || !response.body) throw new Error("Stream não disponível");
+      if (!res.ok || !res.body) throw new Error("Stream failed");
 
-      const reader = response.body.getReader();
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
-      let buffer = "";
-      let lastCodeBlockCount = 0;
-
-      const flush = () => {
-        if (vibeMode) {
-          processVibeStream(accumulated);
-          const displayContent = stripVibeMarkers(accumulated);
-          setMessages((prev) => {
-            const copy = [...prev];
-            const last = copy[copy.length - 1];
-            if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: displayContent };
-            return copy;
-          });
-        } else {
-          const blocks = extractAllCodeBlocks(accumulated);
-          if (blocks.length > lastCodeBlockCount && blocks.length > 0) {
-            lastCodeBlockCount = blocks.length;
-            const last = blocks[blocks.length - 1];
-            onLiveCodeUpdate(last.code, last.lang);
-          }
-          setMessages((prev) => {
-            const copy = [...prev];
-            const last = copy[copy.length - 1];
-            if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: accumulated };
-            return copy;
-          });
-        }
-      };
+      let providerSwitch = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
         for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine.startsWith("data: ")) continue;
-          const payload = trimmedLine.slice(6);
-          if (!payload) continue;
-
-          try {
-            const evt = JSON.parse(payload) as { token?: string; message?: string };
-            if (evt.token) {
-              accumulated += evt.token;
-              flush();
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+            if (data.startsWith("[PROVIDER_SWITCH:")) {
+              providerSwitch = data.replace("[PROVIDER_SWITCH:", "").replace("]", "").trim();
+              setProviderSwitchMsg(`Fallback para ${providerSwitch}`);
+              continue;
             }
-          } catch {
-            if (payload === "done" || payload === "{}") break;
-          }
-
-          if (trimmedLine.startsWith("event: provider_switch")) {
-            setProviderSwitchMsg("Alternando provedor por estabilidade...");
+            try {
+              const parsed = JSON.parse(data);
+              const token = parsed.choices?.[0]?.delta?.content ?? "";
+              accumulated += token;
+              const displayContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
+              setMessages((prev) => {
+                const copy = [...prev];
+                const last = copy[copy.length - 1];
+                if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: displayContent };
+                return copy;
+              });
+              if (!isAnalysisMode) {
+                processVibeStream(accumulated);
+                const codeBlocks = extractAllCodeBlocks(accumulated);
+                if (codeBlocks.length > 0) {
+                  const lastBlock = codeBlocks[codeBlocks.length - 1];
+                  onLiveCodeUpdate(lastBlock.code, lastBlock.lang);
+                }
+              }
+            } catch { /* silent */ }
           }
         }
       }
 
-      const finalContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
-
-      if (vibeMode) processVibeStream(accumulated);
-
-      if (!vibeMode) {
-        const finalBlocks = extractAllCodeBlocks(accumulated);
-        if (finalBlocks.length > 0) {
-          const last = finalBlocks[finalBlocks.length - 1];
-          onLiveCodeUpdate(last.code, last.lang);
-        }
+      if (isAnalysisMode) {
+        setAnalysisContext((prev) => prev ? `${prev}\n\n${accumulated}` : accumulated);
       }
 
-      if (taskType === "analise") {
-        setAnalysisContext(accumulated);
-      }
-
-      setMessages((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: finalContent, isStreaming: false };
-        return copy;
-      });
-    } catch (err: unknown) {
-      if ((err as Error).name === "AbortError") return;
       setMessages((prev) => {
         const copy = [...prev];
         const last = copy[copy.length - 1];
         if (last?.isStreaming) {
-          copy[copy.length - 1] = {
-            ...last,
-            content: "Erro ao processar. Verifique a conexão e tente novamente.",
-            isStreaming: false,
-          };
+          const displayContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
+          copy[copy.length - 1] = { ...last, content: displayContent, isStreaming: false };
         }
+        return copy;
+      });
+    } catch (err: unknown) {
+      if ((err as Error)?.name === "AbortError") return;
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: "Erro ao conectar com a IA. Tente novamente.", isStreaming: false };
         return copy;
       });
     } finally {
       setIsStreaming(false);
-      abortRef.current = null;
     }
-  };
+  }
 
-  const handleAnalystRequest = () => {
-    if (!input.trim() && attachments.length === 0) return;
-    handleSend("analise");
-  };
+  function handleAnalystRequest() {
+    if (stackDecision?.systemPrompt) {
+      streamFromAPI(analyzeInput, true, stackDecision.systemPrompt);
+    } else {
+      streamFromAPI(analyzeInput, true);
+    }
+  }
 
-  const handleBuilderRequest = () => {
-    if (!input.trim() && attachments.length === 0) return;
-    handleSend("construcao");
-  };
+  function handleBuilderRequest() {
+    if (stackDecision?.systemPrompt) {
+      streamFromAPI(vibeInput, false, stackDecision.systemPrompt);
+    } else {
+      streamFromAPI(vibeInput, false);
+    }
+  }
 
   const stopStream = () => {
     abortRef.current?.abort();
@@ -850,24 +679,22 @@ ${soundLines || "  - Nenhum son disponível"}`;
 
   const isAutoMode = language === "auto";
 
+  const analysisMessages = messages.filter((m) => m.role === "user" || m.agentType === "analise" || m.isDecision);
+  const vibeMessages = messages.filter((m) => m.role === "user" || m.agentType === "construcao");
+
   return (
     <motion.div
       initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 380, opacity: 1 }}
+      animate={{ width: 520, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex-shrink-0 border-r border-border flex flex-col overflow-hidden"
-      style={{
-        background: "hsl(var(--sidebar))",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-      }}
+      className="flex-shrink-0 flex overflow-hidden border-r border-border"
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
       {isDragging && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg border-2 border-dashed border-primary/60 bg-primary/10 pointer-events-none">
+        <div className="absolute inset-0 z-20 flex items-center justify-center border-2 border-dashed border-primary/60 bg-primary/10 pointer-events-none">
           <div className="text-center">
             <Image className="h-8 w-8 mx-auto mb-2 text-primary" />
             <p className="text-sm text-primary font-medium">Solte a imagem aqui</p>
@@ -875,175 +702,244 @@ ${soundLines || "  - Nenhum son disponível"}`;
         </div>
       )}
 
-      <div
-        className="flex-shrink-0 border-b border-border/60 px-4 py-3"
-        style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, transparent 80%)" }}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1.5">
-              <div
-                className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}50` }}
-                title="Sistema Analista"
-              >
-                <Search className="h-4 w-4" style={{ color: OLIVE_GREEN }} />
+      {/* ═══════════════════════════════ ANÁLISE PANEL (GREEN/WHITE) ═══════════════════════════════ */}
+      <div className="w-[248px] flex-shrink-0 flex flex-col overflow-hidden border-r" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+        {/* Header Analysis */}
+        <div className="flex-shrink-0 px-3 py-2.5" style={{ background: "linear-gradient(135deg, #052e16 0%, #064e3b 100%)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+                <Search className="h-3.5 w-3.5 text-white" />
               </div>
-              <div
-                className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}50` }}
-                title="Sistema Construtor"
-              >
-                <Terminal className="h-4 w-4" style={{ color: TERRACOTTA }} />
+              <div>
+                <p className="text-white text-xs font-bold leading-none">Análise</p>
+                <p className="text-emerald-300 text-[9px] font-mono leading-none mt-0.5 tracking-wider">AQUI VOCÊ PROJETA</p>
               </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground leading-none">Jad.ia</span>
-                {vibeMode && (
-                  <span className="text-[10px] font-mono bg-teal-500/15 text-teal-400 border border-teal-500/25 px-1.5 py-0.5 rounded-full">
-                    multi-arquivo
-                  </span>
-                )}
-                <span className="flex items-center gap-1 text-[10px] font-mono bg-green-500/15 text-green-400 border border-green-500/25 px-1.5 py-0.5 rounded-full">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                  ao vivo
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">
-                {isAutoMode && stackDecision
-                  ? `Stack: ${stackDecision.framework} · ${stackDecision.language}`
-                  : "Analista (Gemini) + Construtor (Groq)"}
-              </p>
+            <div className="flex items-center gap-1">
+              {isAutoMode && hasAnalyzed && (
+                <button onClick={onReanalyze} title="Re-analisar" className="h-6 w-6 flex items-center justify-center rounded text-white/60 hover:text-white transition-colors">
+                  <RefreshCw className="h-3 w-3" />
+                </button>
+              )}
+              <button onClick={onClose} className="h-6 w-6 flex items-center justify-center rounded text-white/60 hover:text-white transition-colors">
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1 mt-0.5">
-            {isAutoMode && hasAnalyzed && (
-              <button
-                onClick={onReanalyze}
-                title="Trocar stack"
-                className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
+          {isAutoMode && stackDecision && (
+            <p className="text-emerald-200/70 text-[9px] font-mono truncate">
+              Stack: {stackDecision.framework} · {stackDecision.language}
+            </p>
+          )}
+        </div>
+
+        {/* Analysis Messages */}
+        <div ref={analyzeScrollRef} className="flex-1 overflow-y-auto p-2.5 space-y-2.5 scroll-smooth">
+          {analysisMessages.length === 0 && !isAnalyzing && (
+            <div className="flex flex-col items-center justify-center h-full gap-3 px-2 py-8 text-center">
+              <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ background: "rgba(5,46,22,0.08)", border: "1px solid #86efac" }}>
+                <Sparkles className="h-5 w-5 text-green-700" />
+              </div>
+              <div>
+                <p className="text-green-800 text-xs font-semibold mb-1">Planeje seu projeto</p>
+                <p className="text-green-600 text-[11px] leading-relaxed">Descreva o que quer criar e o Analista escolhe a melhor arquitetura e stack tecnológica.</p>
+              </div>
+              <div className="w-full space-y-1 mt-2">
+                {QUICK_COMMANDS.slice(0, 4).map((c) => (
+                  <button key={c.cmd} onClick={() => { setAnalyzeInput(c.cmd + " "); analyzeTextareaRef.current?.focus(); }}
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-mono border transition-all text-left"
+                    style={{ border: "1px solid #bbf7d0", background: "rgba(5,46,22,0.04)", color: "#166534" }}>
+                    <span className="font-semibold min-w-[56px]">{c.cmd}</span>
+                    <span className="text-green-500/80 truncate">{c.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isAnalyzing && analysisMessages.length === 0 && (
+            <div className="flex flex-col items-center py-10 gap-3">
+              <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ background: "rgba(5,46,22,0.1)", border: "1px solid #86efac" }}>
+                <Loader2 className="h-5 w-5 text-green-700 animate-spin" />
+              </div>
+              <p className="text-green-700 text-xs text-center">Analisando stack tecnológica...</p>
+            </div>
+          )}
+
+          {analysisMessages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[90%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed ${
+                msg.role === "user"
+                  ? "rounded-tr-sm text-white"
+                  : "rounded-tl-sm border"
+              }`}
+                style={msg.role === "user"
+                  ? { background: "linear-gradient(135deg, #16a34a 0%, #052e16 100%)" }
+                  : { background: "white", border: "1px solid #bbf7d0", color: "#052e16" }
+                }
               >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+                {msg.role === "assistant" ? (
+                  <div>
+                    {formatMessage(msg.content).parts.map((part, pi) =>
+                      part.type === "code"
+                        ? <AnalysisCodeBlock key={pi} content={part.content} lang={part.lang || ""} />
+                        : <span key={pi} className="whitespace-pre-wrap">{part.content}</span>
+                    )}
+                    {msg.isStreaming && (
+                      <span className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle bg-green-600" />
+                    )}
+                  </div>
+                ) : (
+                  <span className="whitespace-pre-wrap">{msg.content}</span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {isStreaming && activeAgent === "analise" && statusText && (
+            <div className="flex items-center gap-2 px-2 py-1">
+              <div className="flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-1.5 w-1.5 rounded-full bg-green-600" style={{ animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                ))}
+              </div>
+              <span className="text-[10px] font-mono text-green-700">{statusText}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Analysis Input */}
+        <div className="p-2 flex-shrink-0 border-t" style={{ borderColor: "#bbf7d0", background: "white" }}>
+          {showAnalyzeCommands && (
+            <div className="mb-1.5 rounded-xl border overflow-hidden" style={{ borderColor: "#bbf7d0", background: "white" }}>
+              {QUICK_COMMANDS.filter((c) => c.cmd.startsWith(analyzeInput.toLowerCase())).map((c) => (
+                <button key={c.cmd} onClick={() => { setAnalyzeInput(c.cmd + " "); setShowAnalyzeCommands(false); analyzeTextareaRef.current?.focus(); }}
+                  className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-green-50 transition-colors border-b last:border-0" style={{ borderColor: "#bbf7d0" }}>
+                  <span className="text-[10px] font-mono text-green-700 font-semibold">{c.cmd}</span>
+                  <span className="text-[10px] text-green-500">{c.desc}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="rounded-xl overflow-hidden border" style={{ borderColor: "#86efac", background: "#f0fdf4" }}>
+            <textarea
+              ref={analyzeTextareaRef}
+              value={analyzeInput}
+              onChange={(e) => {
+                setAnalyzeInput(e.target.value);
+                autoResizeAnalyze();
+                setShowAnalyzeCommands(e.target.value.startsWith("/") && e.target.value.length <= 20);
+              }}
+              onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAnalystRequest(); }
+                if (e.key === "Escape") setShowAnalyzeCommands(false);
+              }}
+              onPaste={handlePaste}
+              placeholder={isAnalyzing ? "Aguarde..." : isStreaming && activeAgent === "analise" ? "Aguarde a resposta..." : "Descreva o que quer projetar..."}
+              disabled={isAnalyzing || (isStreaming && activeAgent === "analise")}
+              rows={1}
+              className="w-full bg-transparent px-3 pt-2 pb-1 text-[11px] font-mono resize-none outline-none leading-relaxed disabled:opacity-50"
+              style={{ maxHeight: "100px", color: "#052e16" }}
+            />
+            <div className="px-2 pb-2">
+              {isStreaming && activeAgent === "analise" ? (
+                <button onClick={stopStream}
+                  className="w-full h-8 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border"
+                  style={{ background: "#fef2f2", color: "#b91c1c", borderColor: "#fca5a5" }}>
+                  <X className="h-3 w-3" /> Parar
+                </button>
+              ) : (
+                <button onClick={handleAnalystRequest}
+                  disabled={!analyzeInput.trim() || isAnalyzing}
+                  className="w-full h-8 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "linear-gradient(135deg, #052e16 0%, #064e3b 100%)", color: "white" }}>
+                  <Search className="h-3 w-3" />
+                  Solicitar Análise
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scroll-smooth">
-        {messages.length === 0 && !isAnalyzing && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 px-2 py-8 text-center">
-            <div className="w-full grid grid-cols-2 gap-2">
-              <div
-                className="rounded-xl p-3 text-left"
-                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}40` }}
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Search className="h-3.5 w-3.5" style={{ color: OLIVE_GREEN }} />
-                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider" style={{ color: OLIVE_GREEN }}>
-                    Analista
-                  </span>
-                </div>
-                <p className="text-[10px] text-foreground/60 leading-relaxed">Diagnóstico técnico e plano de arquitetura</p>
+      {/* ═══════════════════════════════ VIBE PANEL (DARK GRADIENT) ═══════════════════════════════ */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#06090f" }}>
+        {/* Header Vibe */}
+        <div className="flex-shrink-0 px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0d4429 0%, #14b8a6 50%, #ec4899 100%)" }}>
+                <Zap className="h-3.5 w-3.5 text-white" />
               </div>
-              <div
-                className="rounded-xl p-3 text-left"
-                style={{ background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}40` }}
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Terminal className="h-3.5 w-3.5" style={{ color: TERRACOTTA }} />
-                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider" style={{ color: TERRACOTTA }}>
-                    Construtor
+              <div>
+                <p className="text-[11px] font-black leading-none">
+                  <span style={{ background: "linear-gradient(90deg, #4ade80 0%, #14b8a6 35%, #f97316 70%, #ec4899 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                    Vibe Coding
                   </span>
-                </div>
-                <p className="text-[10px] text-foreground/60 leading-relaxed">Executa o plano e escreve os arquivos</p>
+                </p>
+                <p className="text-[9px] font-mono leading-none mt-0.5 tracking-wider" style={{ color: "#ec4899" }}>AQUI VOCÊ REALIZA</p>
               </div>
             </div>
-
-            <div className="w-full space-y-1">
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider text-left mb-2">Comandos rápidos</p>
-              {QUICK_COMMANDS.map((c) => (
-                <button
-                  key={c.cmd}
-                  onClick={() => applyCommand(c.cmd)}
-                  className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all text-left group"
-                >
-                  <span className="text-primary group-hover:text-primary font-semibold min-w-[70px]">{c.cmd}</span>
-                  <span className="text-muted-foreground/70 group-hover:text-muted-foreground">{c.desc}</span>
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5">
+              {vibeMode && (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(20,184,166,0.1)", color: "#14b8a6", borderColor: "rgba(20,184,166,0.3)" }}>
+                  multi-arquivo
+                </span>
+              )}
+              <span className="flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(74,222,128,0.08)", color: "#4ade80", borderColor: "rgba(74,222,128,0.2)" }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                ao vivo
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
-        {isAnalyzing && messages.length === 0 && (
-          <div className="flex flex-col items-center py-12 gap-4">
-            <div className="relative">
-              <div
-                className="h-12 w-12 rounded-xl flex items-center justify-center"
-                style={{ background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}40` }}
-              >
-                <Search className="h-6 w-6" style={{ color: OLIVE_GREEN }} />
+        {/* Vibe Messages */}
+        <div ref={vibeScrollRef} className="flex-1 overflow-y-auto p-2.5 space-y-2.5 scroll-smooth">
+          {vibeMessages.length === 0 && !isAnalyzing && (
+            <div className="flex flex-col items-center justify-center h-full gap-3 px-2 py-8 text-center">
+              <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(13,68,41,0.3) 0%, rgba(236,72,153,0.15) 100%)", border: "1px solid rgba(236,72,153,0.2)" }}>
+                <Zap className="h-5 w-5" style={{ color: "#ec4899" }} />
               </div>
-              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-background border border-primary/40 flex items-center justify-center">
-                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <div>
+                <p className="text-sm font-bold mb-1" style={{ background: "linear-gradient(90deg, #4ade80, #14b8a6, #f97316, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  Pronto para criar
+                </p>
+                <p className="text-muted-foreground text-[11px] leading-relaxed">Use a análise do painel ao lado ou descreva diretamente o que quer construir.</p>
+              </div>
+              <div className="w-full space-y-1 mt-2">
+                {QUICK_COMMANDS.map((c) => (
+                  <button key={c.cmd} onClick={() => { setVibeInput(c.cmd + " "); vibeTextareaRef.current?.focus(); }}
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-mono border border-white/5 hover:border-teal-500/30 hover:bg-teal-500/5 transition-all text-left">
+                    <span className="text-teal-400 font-semibold min-w-[56px]">{c.cmd}</span>
+                    <span className="text-muted-foreground/70 truncate">{c.desc}</span>
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs font-mono font-semibold uppercase tracking-wider mb-1" style={{ color: OLIVE_GREEN }}>
-                Sistema Analista
-              </p>
-              <p className="text-xs text-muted-foreground">Selecionando a melhor stack tecnológica...</p>
-            </div>
-          </div>
-        )}
+          )}
 
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "flex-row-reverse" : "flex-row"} gap-2`}>
-            <div className={`max-w-[90%] ${msg.role === "user" ? "" : ""}`}>
-              {msg.role === "assistant" && msg.agentType && <AgentBadge type={msg.agentType} />}
-              <div
-                className={`rounded-2xl px-3 py-2.5 text-xs leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-tr-sm"
-                    : msg.isDecision
-                      ? "bg-primary/10 border border-primary/20 text-foreground rounded-tl-sm"
-                      : msg.agentType === "analise"
-                        ? "rounded-tl-sm"
-                        : "rounded-tl-sm"
-                }`}
-                style={
-                  msg.role === "assistant"
-                    ? msg.agentType === "analise"
-                      ? { background: OLIVE_LIGHT, border: `1px solid ${OLIVE_GREEN}30` }
-                      : { background: TERRACOTTA_LIGHT, border: `1px solid ${TERRACOTTA}30` }
-                    : {}
+          {vibeMessages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[90%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed ${
+                msg.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"
+              }`}
+                style={msg.role === "user"
+                  ? { background: "linear-gradient(135deg, #14b8a6 0%, #0d4429 100%)", color: "white" }
+                  : msg.isDecision
+                    ? { background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)", color: "rgba(255,255,255,0.85)" }
+                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)" }
                 }
               >
                 {msg.attachments && msg.attachments.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
                     {msg.attachments.map((att) => (
-                      <div
-                        key={att.id}
-                        className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10"
-                      >
+                      <div key={att.id} className="flex items-center gap-1 bg-black/30 rounded px-2 py-1 border border-white/10">
                         {att.type === "image" ? (
-                          <>
-                            <Image className="h-3 w-3 text-blue-400" />
-                            <img src={att.preview} alt="" className="h-6 w-6 rounded object-cover" />
-                          </>
+                          <><Image className="h-3 w-3 text-blue-400" /><img src={att.preview} alt="" className="h-6 w-6 rounded object-cover" /></>
                         ) : (
-                          <>
-                            <FileText className="h-3 w-3 text-yellow-400" />
-                            <span className="text-[10px] text-muted-foreground font-mono">{att.preview}</span>
-                          </>
+                          <><FileText className="h-3 w-3 text-yellow-400" /><span className="text-[10px] text-muted-foreground font-mono">{att.preview}</span></>
                         )}
                       </div>
                     ))}
@@ -1052,25 +948,12 @@ ${soundLines || "  - Nenhum son disponível"}`;
                 {msg.role === "assistant" ? (
                   <div>
                     {formatMessage(msg.content).parts.map((part, pi) =>
-                      part.type === "code" ? (
-                        <CodeBlock key={pi} content={part.content} lang={part.lang || ""} />
-                      ) : (
-                        <span
-                          key={pi}
-                          className="whitespace-pre-wrap"
-                          style={{
-                            fontFamily: msg.agentType === "analise" ? "'Inter', 'system-ui', sans-serif" : undefined,
-                          }}
-                        >
-                          {part.content}
-                        </span>
-                      ),
+                      part.type === "code"
+                        ? <VibeCodeBlock key={pi} content={part.content} lang={part.lang || ""} />
+                        : <span key={pi} className="whitespace-pre-wrap">{part.content}</span>
                     )}
                     {msg.isStreaming && (
-                      <span
-                        className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle"
-                        style={{ background: msg.agentType === "analise" ? OLIVE_GREEN : TERRACOTTA }}
-                      />
+                      <span className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle" style={{ background: "#ec4899" }} />
                     )}
                   </div>
                 ) : (
@@ -1078,204 +961,107 @@ ${soundLines || "  - Nenhum son disponível"}`;
                 )}
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
 
-      <VibeFilesProgress files={vibeFiles} />
-
-      {isFetchingAssets && (
-        <div className="mx-3 mb-2 px-3 py-2 rounded-xl border border-white/8 flex items-center gap-2" style={{ background: "rgba(88,47,14,0.08)" }}>
-          <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#a0622a" }} />
-          <span className="text-[10px] font-mono" style={{ color: "#a0622a" }}>Buscando assets na internet...</span>
-        </div>
-      )}
-
-      <AssetLogPanel entries={assetLog} />
-
-      {providerSwitchMsg && !isStreaming && (
-        <div className="px-3 py-1.5 flex-shrink-0">
-          <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
-            <AlertCircle className="h-3 w-3 text-yellow-500" />
-            {providerSwitchMsg}
-          </div>
-        </div>
-      )}
-
-      {isStreaming && statusText && (
-        <div className="px-3 py-1.5 flex-shrink-0 border-t border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-0.5">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-1 w-1 rounded-full"
-                  style={{
-                    background: activeAgent === "analise" ? OLIVE_GREEN : TERRACOTTA,
-                    animation: `pulse 1.2s ${i * 0.2}s infinite`,
-                  }}
-                />
-              ))}
+          {isStreaming && activeAgent === "construcao" && statusText && (
+            <div className="flex items-center gap-2 px-2 py-1">
+              <div className="flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: "#ec4899", animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                ))}
+              </div>
+              <span className="text-[10px] font-mono text-muted-foreground">{statusText}</span>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground">{statusText}</span>
+          )}
+        </div>
+
+        <VibeFilesProgress files={vibeFiles} />
+
+        {isFetchingAssets && (
+          <div className="mx-2 mb-2 px-3 py-2 rounded-xl border border-orange-500/20 flex items-center gap-2" style={{ background: "rgba(249,115,22,0.05)" }}>
+            <Loader2 className="h-3 w-3 animate-spin text-orange-400" />
+            <span className="text-[10px] font-mono text-orange-400">Buscando assets...</span>
           </div>
-        </div>
-      )}
+        )}
 
-      {isAutoMode && hasAnalyzed && stackDecision && !isStreaming && messages.length > 0 && (
-        <div className="px-3 pb-1 flex-shrink-0">
-          <button
-            onClick={onReanalyze}
-            className="w-full text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors py-1.5 flex items-center justify-center gap-1.5 border border-dashed border-white/10 rounded-lg hover:border-primary/30 hover:bg-white/5"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Trocar stack / re-analisar
-          </button>
-        </div>
-      )}
+        <AssetLogPanel entries={assetLog} />
 
-      <div className="border-t border-white/10 p-2.5 flex-shrink-0 space-y-2">
-        <AnimatePresence>
+        {providerSwitchMsg && !isStreaming && (
+          <div className="px-3 py-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+              <AlertCircle className="h-3 w-3 text-yellow-500" />
+              {providerSwitchMsg}
+            </div>
+          </div>
+        )}
+
+        {/* Vibe Input */}
+        <div className="p-2 flex-shrink-0 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
           {attachments.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex flex-wrap gap-1.5"
-            >
+            <div className="flex flex-wrap gap-1.5 mb-1.5">
               {attachments.map((att) => (
-                <div
-                  key={att.id}
-                  className="relative flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-2 py-1 group"
-                >
+                <div key={att.id} className="relative flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-2 py-1 group">
                   {att.type === "image" ? (
-                    <>
-                      <Image className="h-3 w-3 text-blue-400 flex-shrink-0" />
-                      <img src={att.preview} alt="" className="h-5 w-5 rounded object-cover" />
-                      <span className="text-[10px] text-muted-foreground font-mono">imagem</span>
-                    </>
+                    <><Image className="h-3 w-3 text-blue-400 flex-shrink-0" /><img src={att.preview} alt="" className="h-5 w-5 rounded object-cover" /><span className="text-[10px] text-muted-foreground font-mono">imagem</span></>
                   ) : (
-                    <>
-                      <FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" />
-                      <span className="text-[10px] text-muted-foreground font-mono max-w-[120px] truncate">{att.preview}</span>
-                    </>
+                    <><FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" /><span className="text-[10px] text-muted-foreground font-mono max-w-[100px] truncate">{att.preview}</span></>
                   )}
-                  <button
-                    onClick={() => setAttachments((p) => p.filter((a) => a.id !== att.id))}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-1"
-                  >
+                  <button onClick={() => setAttachments((p) => p.filter((a) => a.id !== att.id))} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-1">
                     <Trash2 className="h-2.5 w-2.5" />
                   </button>
                 </div>
               ))}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
-        <AnimatePresence>
-          {showCommands && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              className="rounded-xl border border-white/10 overflow-hidden"
-              style={{ background: "rgba(10,10,20,0.95)", backdropFilter: "blur(20px)" }}
-            >
-              {QUICK_COMMANDS.filter((c) => c.cmd.startsWith(input.toLowerCase())).map((c) => (
-                <button
-                  key={c.cmd}
-                  onClick={() => applyCommand(c.cmd)}
-                  className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                >
-                  <span className="text-xs font-mono text-primary">{c.cmd}</span>
+          {showVibeCommands && (
+            <div className="mb-1.5 rounded-xl border border-white/10 overflow-hidden" style={{ background: "rgba(6,9,15,0.98)" }}>
+              {QUICK_COMMANDS.filter((c) => c.cmd.startsWith(vibeInput.toLowerCase())).map((c) => (
+                <button key={c.cmd} onClick={() => { setVibeInput(c.cmd + " "); setShowVibeCommands(false); vibeTextareaRef.current?.focus(); }}
+                  className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
+                  <span className="text-[10px] font-mono text-teal-400">{c.cmd}</span>
                   <span className="text-[10px] text-muted-foreground">{c.desc}</span>
                 </button>
               ))}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
-        <div
-          className="rounded-xl border border-white/10 overflow-hidden transition-colors"
-          style={{ background: "rgba(255,255,255,0.04)" }}
-        >
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            placeholder={
-              isAnalyzing
-                ? "Aguarde a análise da stack..."
-                : isStreaming
-                  ? "Aguarde a resposta..."
-                  : vibeMode
-                    ? "Descreva o sistema que quer criar..."
-                    : "Descreva o que quer construir... (/ para comandos)"
-            }
-            disabled={isAnalyzing || isStreaming}
-            rows={1}
-            className="w-full bg-transparent px-3 pt-2.5 pb-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/50 resize-none outline-none leading-relaxed disabled:opacity-50"
-            style={{ maxHeight: "180px" }}
-          />
-          <div className="px-2 pb-2 pt-1">
-            {isStreaming ? (
-              <button
-                onClick={stopStream}
-                className="w-full h-10 rounded-lg text-xs font-mono bg-destructive/20 text-destructive border border-destructive/30 hover:bg-destructive/30 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <X className="h-3.5 w-3.5" />
-                Parar geração
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAnalystRequest}
-                  disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
-                  className="flex-1 h-11 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{
-                    background: BEIGE,
-                    color: OLIVE_GREEN,
-                    border: `1.5px solid ${OLIVE_GREEN}60`,
-                    boxShadow: `0 2px 8px ${OLIVE_GREEN}20`,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${OLIVE_GREEN}35`;
-                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${OLIVE_GREEN}20`;
-                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                  }}
-                >
-                  <Search className="h-3.5 w-3.5" />
-                  Solicitar Análise
+          <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
+            <textarea
+              ref={vibeTextareaRef}
+              value={vibeInput}
+              onChange={(e) => {
+                setVibeInput(e.target.value);
+                autoResizeVibe();
+                setShowVibeCommands(e.target.value.startsWith("/") && e.target.value.length <= 20);
+              }}
+              onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleBuilderRequest(); }
+                if (e.key === "Escape") setShowVibeCommands(false);
+              }}
+              onPaste={handlePaste}
+              placeholder={isStreaming && activeAgent === "construcao" ? "Aguarde a resposta..." : vibeMode ? "Descreva o sistema que quer criar..." : "Descreva o que quer construir... (/ para comandos)"}
+              disabled={isStreaming && activeAgent === "construcao"}
+              rows={1}
+              className="w-full bg-transparent px-3 pt-2.5 pb-1 text-[11px] font-mono text-foreground placeholder:text-muted-foreground/50 resize-none outline-none leading-relaxed disabled:opacity-50"
+              style={{ maxHeight: "120px" }}
+            />
+            <div className="px-2 pb-2 pt-1">
+              {isStreaming && activeAgent === "construcao" ? (
+                <button onClick={stopStream}
+                  className="w-full h-9 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                  <X className="h-3 w-3" /> Parar geração
                 </button>
-                <button
-                  onClick={handleBuilderRequest}
-                  disabled={(!input.trim() && attachments.length === 0) || isAnalyzing}
-                  className="flex-1 h-11 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{
-                    background: TERRACOTTA,
-                    color: BEIGE,
-                    border: `1.5px solid ${TERRACOTTA}`,
-                    boxShadow: `0 2px 8px ${TERRACOTTA}30`,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 16px ${TERRACOTTA}50`;
-                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 8px ${TERRACOTTA}30`;
-                    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                  }}
-                >
-                  <Terminal className="h-3.5 w-3.5" />
+              ) : (
+                <button onClick={handleBuilderRequest}
+                  disabled={!vibeInput.trim() || (isStreaming && activeAgent === "analise")}
+                  className="w-full h-9 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: "linear-gradient(135deg, #0d4429 0%, #14b8a6 45%, #f97316 80%, #ec4899 100%)", color: "white", boxShadow: "0 2px 12px rgba(236,72,153,0.25)" }}>
+                  <Zap className="h-3.5 w-3.5" />
                   {vibeMode ? "Iniciar Vibe Coding" : "Construir"}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

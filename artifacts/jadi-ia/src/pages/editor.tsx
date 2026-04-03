@@ -505,7 +505,7 @@ export default function Editor() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-48 border-r border-border bg-sidebar flex flex-col flex-shrink-0 z-10">
+        <div className="w-40 border-r border-border bg-sidebar flex flex-col flex-shrink-0 z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
             <TabsList className="h-9 rounded-none border-b border-border bg-transparent flex-shrink-0">
               <TabsTrigger value="code" className="text-xs flex-1 rounded-none" data-testid="tab-code">
@@ -761,13 +761,14 @@ export default function Editor() {
           {showPreview && (
             <div
               className="border-l border-border flex-shrink-0 overflow-hidden"
-              style={{ width: "45%" }}
+              style={{ width: "40%" }}
             >
               <PreviewPanel
                 projectId={projectId}
                 token={token}
                 revisionId={previewRevision}
                 currentFileName={currentFile?.name}
+                projectLanguage={stackDecision?.language ?? project.language}
               />
             </div>
           )}
