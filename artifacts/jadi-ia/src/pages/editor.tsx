@@ -505,6 +505,7 @@ export default function Editor() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
+        {/* ── 1. ARQUIVOS — far left ── */}
         <div className="w-40 border-r border-border bg-sidebar flex flex-col flex-shrink-0 z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
             <TabsList className="h-9 rounded-none border-b border-border bg-transparent flex-shrink-0">
@@ -683,6 +684,23 @@ export default function Editor() {
           </Tabs>
         </div>
 
+        {/* ── 2. PREVIEW — centro ── */}
+        {showPreview && (
+          <div
+            className="border-r border-border flex-shrink-0 overflow-hidden"
+            style={{ width: "300px" }}
+          >
+            <PreviewPanel
+              projectId={projectId}
+              token={token}
+              revisionId={previewRevision}
+              currentFileName={currentFile?.name}
+              projectLanguage={stackDecision?.language ?? project.language}
+            />
+          </div>
+        )}
+
+        {/* ── 3. CHAT ANÁLISE + VIBE — direita da preview ── */}
         <AnimatePresence>
           {showChat && (
             <VibeChatPanel
@@ -705,71 +723,55 @@ export default function Editor() {
           )}
         </AnimatePresence>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex overflow-hidden font-mono text-sm" style={{ minHeight: 0 }}>
-            {selectedFileId && currentFile ? (
-              <>
-                <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
-                  {Array.from({ length: lineCount }, (_, i) => (
-                    <div
-                      key={i + 1}
-                      title={`Clique para editar linha ${i + 1} com IA`}
-                      className={`cursor-pointer w-full text-right pr-0 transition-colors hover:text-primary hover:bg-primary/10 rounded-sm px-1 ${selectedLine === i + 1 ? "text-primary bg-primary/15" : ""}`}
-                      onClick={() => handleLineClick(i + 1)}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
-                </div>
-                <textarea
-                  value={editingContent}
-                  onChange={(e) => setEditingContent(e.target.value)}
-                  className="flex-1 p-3 bg-background resize-none outline-none leading-6 text-sm font-mono overflow-auto"
-                  spellCheck={false}
-                  data-testid="editor-textarea"
-                  onKeyDown={(e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-                      e.preventDefault();
-                      handleSave();
-                    }
-                    if (e.key === "Tab") {
-                      e.preventDefault();
-                      const start = e.currentTarget.selectionStart;
-                      const end = e.currentTarget.selectionEnd;
-                      setEditingContent(
-                        editingContent.substring(0, start) + "  " + editingContent.substring(end),
-                      );
-                    }
-                  }}
-                />
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p className="text-sm">Selecione um arquivo para editar</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {vibeMode
-                      ? "Ative o Vibe Coding e descreva o que quer criar"
-                      : "Ou abre o chat da IA para gerar código"}
-                  </p>
-                </div>
+        {/* ── 4. EDITOR DE CÓDIGO — extremidade direita ── */}
+        <div className="flex-1 flex overflow-hidden font-mono text-sm" style={{ minHeight: 0 }}>
+          {selectedFileId && currentFile ? (
+            <>
+              <div className="w-10 flex-shrink-0 bg-muted/30 border-r border-border flex flex-col items-end pt-3 pr-2 text-muted-foreground/50 text-xs leading-6 overflow-hidden select-none">
+                {Array.from({ length: lineCount }, (_, i) => (
+                  <div
+                    key={i + 1}
+                    title={`Clique para editar linha ${i + 1} com IA`}
+                    className={`cursor-pointer w-full text-right pr-0 transition-colors hover:text-primary hover:bg-primary/10 rounded-sm px-1 ${selectedLine === i + 1 ? "text-primary bg-primary/15" : ""}`}
+                    onClick={() => handleLineClick(i + 1)}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-
-          {showPreview && (
-            <div
-              className="border-l border-border flex-shrink-0 overflow-hidden"
-              style={{ width: "40%" }}
-            >
-              <PreviewPanel
-                projectId={projectId}
-                token={token}
-                revisionId={previewRevision}
-                currentFileName={currentFile?.name}
-                projectLanguage={stackDecision?.language ?? project.language}
+              <textarea
+                value={editingContent}
+                onChange={(e) => setEditingContent(e.target.value)}
+                className="flex-1 p-3 bg-background resize-none outline-none leading-6 text-sm font-mono overflow-auto"
+                spellCheck={false}
+                data-testid="editor-textarea"
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                  if (e.key === "Tab") {
+                    e.preventDefault();
+                    const start = e.currentTarget.selectionStart;
+                    const end = e.currentTarget.selectionEnd;
+                    setEditingContent(
+                      editingContent.substring(0, start) + "  " + editingContent.substring(end),
+                    );
+                  }
+                }}
               />
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Code className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p className="text-sm">Selecione um arquivo para editar</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {vibeMode
+                    ? "Ative o Vibe Coding e descreva o que quer criar"
+                    : "Ou abre o chat da IA para gerar código"}
+                </p>
+              </div>
             </div>
           )}
         </div>
