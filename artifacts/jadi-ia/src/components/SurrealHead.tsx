@@ -14,15 +14,11 @@ export function SurrealHead({ className = "" }: { className?: string }) {
   useEffect(() => {
     const MAX_DEG = 22;
 
-    /* ── mouse tracking ── */
+    /* ── mouse tracking (relative to full viewport for smooth global effect) ── */
     function onMouseMove(e: MouseEvent) {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
       isInsideRef.current = true;
-      const cx = rect.left + rect.width  / 2;
-      const cy = rect.top  + rect.height / 2;
-      const rawX = ((e.clientY - cy) / (rect.height / 2)) * MAX_DEG;
-      const rawY = ((e.clientX - cx) / (rect.width  / 2)) * -MAX_DEG;
+      const rawX = ((e.clientY - window.innerHeight / 2) / (window.innerHeight / 2)) * MAX_DEG;
+      const rawY = ((e.clientX - window.innerWidth  / 2) / (window.innerWidth  / 2)) * -MAX_DEG;
       targetRef.current = {
         x: Math.max(-MAX_DEG, Math.min(MAX_DEG, rawX)),
         y: Math.max(-MAX_DEG, Math.min(MAX_DEG, rawY)),
@@ -44,7 +40,7 @@ export function SurrealHead({ className = "" }: { className?: string }) {
 
     /* ── smooth animation loop ── */
     function animate() {
-      const LERP = 0.055;
+      const LERP = 0.10;
       currentRef.current.x += (targetRef.current.x - currentRef.current.x) * LERP;
       currentRef.current.y += (targetRef.current.y - currentRef.current.y) * LERP;
       setTilt({ x: currentRef.current.x, y: currentRef.current.y });
@@ -83,7 +79,7 @@ export function SurrealHead({ className = "" }: { className?: string }) {
     <div
       ref={containerRef}
       className={`relative ${className}`}
-      style={{ perspective: "1000px", cursor: "none" }}
+      style={{ perspective: "1000px" }}
     >
       <style>{`
         @keyframes head-float {
