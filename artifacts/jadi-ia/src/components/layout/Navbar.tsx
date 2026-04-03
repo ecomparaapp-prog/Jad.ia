@@ -22,7 +22,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 pt-3 pb-2">
         <div
-          className="glass-heavy rounded-[2rem] px-5 h-14 flex items-center justify-between"
+          className="glass-heavy rounded-[2rem] px-5 h-[100px] flex items-center justify-between"
           style={{ borderRadius: '2rem' }}
         >
           {/* Logo */}
@@ -31,7 +31,7 @@ export function Navbar() {
               src={logoSemFundo}
               alt="Jad.ia Logo"
               className="object-contain flex-shrink-0"
-              style={{ height: '60px', width: '60px', background: 'transparent' }}
+              style={{ height: '90px', width: '90px', background: 'transparent' }}
               whileHover={{ scale: 1.06 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             />

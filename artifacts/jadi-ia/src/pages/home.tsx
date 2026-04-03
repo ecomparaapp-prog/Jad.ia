@@ -275,17 +275,10 @@ export default function Home() {
                     boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                   }}
                 >
-                  <div style={{ position: "relative", display: "inline-block", borderRadius: "0.5rem", overflow: "hidden" }}>
+                  <div style={{ filter: "grayscale(1) contrast(0.85)", borderRadius: "0.5rem", overflow: "hidden", display: "inline-block" }}>
                     <Logo size={34} />
-                    <div style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: LOGO_GRADIENT[i],
-                      mixBlendMode: "color",
-                      borderRadius: "0.5rem",
-                    }} />
                   </div>
-                  <span className="text-xs font-semibold" style={{ fontFamily: "var(--app-font-mono)", color: LOGO_GRADIENT[i] }}>{name}</span>
+                  <span className="text-xs font-semibold text-gray-800" style={{ fontFamily: "var(--app-font-mono)" }}>{name}</span>
                 </div>
               </motion.div>
             ))}
