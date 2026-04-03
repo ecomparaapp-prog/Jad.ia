@@ -693,7 +693,7 @@ export default function VibeChatPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="relative flex-1 overflow-hidden min-w-0"
+      className="relative h-full w-full overflow-hidden"
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
