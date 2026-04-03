@@ -526,12 +526,18 @@ export default function VibeChatPanel({
     let resolvedAssets: ResolvedAssets | null = null;
     let assetsContext = "";
 
+    const authToken = localStorage.getItem("token");
+    const authHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
     if (!isAnalysisMode && vibeMode) {
       setIsFetchingAssets(true);
       try {
         const assetsRes = await fetch("/api/ai/resolve-assets", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           signal: abortRef.current.signal,
           body: JSON.stringify({ projectDescription: inputText }),
         });
@@ -573,12 +579,14 @@ export default function VibeChatPanel({
     try {
       const res = await fetch("/api/ai/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         signal: abortRef.current.signal,
         body: JSON.stringify({
           messages: messagesForAPI,
-          systemExtra,
-          ...(model ? { model } : {}),
+          systemPrompt: systemExtra,
+          taskType: agentType,
+          language,
+          projectContext: projectName,
         }),
       });
 
