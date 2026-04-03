@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, DragEvent, ClipboardEvent, KeyboardEvent, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import {
   X,
   RefreshCw,
@@ -684,13 +685,15 @@ export default function VibeChatPanel({
   const analysisMessages = messages.filter((m) => m.role === "user" || m.agentType === "analise" || m.isDecision);
   const vibeMessages = messages.filter((m) => m.role === "user" || m.agentType === "construcao");
 
+  const resizeHandleInner = "w-[4px] bg-border/30 hover:bg-white/40 data-[resize-handle-active=pointer]:bg-white/60 transition-colors cursor-col-resize flex-shrink-0 z-10";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="relative flex-1 flex overflow-hidden min-w-0"
+      className="relative flex-1 overflow-hidden min-w-0"
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
@@ -704,12 +707,9 @@ export default function VibeChatPanel({
         </div>
       )}
 
-      {/* ═══════════════════════════════ VIBE PANEL (HOME GRADIENT) — LEFT ═══════════════════════════════ */}
-      {/* (rendered first — see bottom of file for Análise panel which is RIGHT) */}
-
-      {/* ═══════════════════════════════ ANÁLISE PANEL (GREEN/WHITE) — RIGHT ═══════════════════════════════ */}
-      {/* TEMPORARILY placed here but will move — see JSX reorder below */}
-      <div className="w-[240px] flex-shrink-0 flex flex-col overflow-hidden border-r" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+      <PanelGroup direction="horizontal" autoSaveId="jadi-vibe-panels" className="h-full">
+      <Panel id="analysis" order={1} defaultSize={25} minSize={12} maxSize={50}>
+      <div className="h-full flex flex-col overflow-hidden border-r" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
         {/* Header Analysis */}
         <div className="flex-shrink-0 px-3 py-2.5" style={{ background: "linear-gradient(135deg, #052e16 0%, #064e3b 100%)" }}>
           <div className="flex items-center justify-between mb-1">
@@ -868,12 +868,21 @@ export default function VibeChatPanel({
           </div>
         </div>
       </div>
+      </Panel>
+
+      <PanelResizeHandle className={resizeHandleInner} />
 
       {/* ── PREVIEW SLOT — entre Análise e Vibe ── */}
-      {centerContent}
+      {centerContent && (
+        <Panel id="preview-center" order={2} defaultSize={30} minSize={15}>
+          {centerContent}
+        </Panel>
+      )}
+      {centerContent && <PanelResizeHandle className={resizeHandleInner} />}
 
       {/* ═══════════════════════════════ VIBE PANEL (HOME GRADIENT) ═══════════════════════════════ */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "linear-gradient(160deg, #011a12 0%, #150700 50%, #140016 100%)" }}>
+      <Panel id="vibe" order={3} minSize={20}>
+      <div className="h-full flex flex-col overflow-hidden" style={{ background: "linear-gradient(160deg, #011a12 0%, #150700 50%, #140016 100%)" }}>
         {/* Header Vibe */}
         <div className="flex-shrink-0 px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,107,53,0.15)", background: "linear-gradient(135deg, #00897B 0%, #FF6B35 55%, #FF00CC 100%)" }}>
           <div className="flex items-center justify-between mb-1">
@@ -1078,6 +1087,8 @@ export default function VibeChatPanel({
           </div>
         </div>
       </div>
+      </Panel>
+      </PanelGroup>
     </motion.div>
   );
 }
