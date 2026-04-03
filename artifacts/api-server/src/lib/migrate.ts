@@ -74,6 +74,20 @@ export async function runMigrations(): Promise<void> {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS github_repos (
+        id SERIAL PRIMARY KEY,
+        project_id INTEGER NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
+        owner TEXT NOT NULL,
+        repo_name TEXT NOT NULL,
+        repo_url TEXT NOT NULL,
+        default_branch TEXT NOT NULL DEFAULT 'main',
+        last_sync_at TIMESTAMPTZ,
+        last_commit_sha TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
     logger.info("Migrações concluídas com sucesso");
   } catch (err) {
     logger.error({ err }, "Erro ao executar migrações");

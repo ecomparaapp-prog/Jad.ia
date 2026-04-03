@@ -10,6 +10,7 @@ import previewRouter from "./preview";
 import assetsRouter from "./assets";
 import contextRouter from "./context";
 import imagesRouter from "./images";
+import githubRouter from "./github";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(previewRouter);
 router.use(assetsRouter);
 router.use(contextRouter);
 router.use(imagesRouter);
+router.use(githubRouter);
 
 export default router;

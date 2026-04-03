@@ -50,6 +50,7 @@ import VibeChatPanel from "@/components/VibeChatPanel";
 import PreviewPanel from "@/components/PreviewPanel";
 import GeneratePromptModal from "@/components/GeneratePromptModal";
 import ImagePickerModal from "@/components/ImagePickerModal";
+import GitHubPanel from "@/components/GitHubPanel";
 
 interface ChatMessage {
   role: "user" | "assistant";

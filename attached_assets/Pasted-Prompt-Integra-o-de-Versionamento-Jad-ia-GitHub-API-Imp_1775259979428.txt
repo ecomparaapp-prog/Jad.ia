@@ -1,0 +1,52 @@
+Prompt: Integração de Versionamento Jad.ia + GitHub API
+"Implemente o Módulo de Persistência e Versionamento (GitHub Bridge) no backend da Jad.ia. O objetivo é permitir que a IA crie, atualize e versione repositórios automaticamente na conta do usuário.
+
+1. Configuração de Autenticação:
+
+Configure o sistema para utilizar o GITHUB_TOKEN armazenado nos Secrets do Replit.
+
+Utilize a biblioteca octokit (SDK oficial do GitHub) para gerenciar as chamadas de API de forma segura.
+
+2. Lógica de Gestão de Repositórios:
+
+Crie uma função createOrUpdateRepo(projectName) que:
+
+Verifique se o repositório já existe no perfil do usuário.
+
+Caso não exista, crie um novo repositório (público ou privado) com o nome do projeto gerado pela Jad.ia.
+
+Inicialize o repositório com um ficheiro README.md técnico gerado pelo Analista.
+
+3. Fluxo de Commits Automatizado:
+
+Configure o Agente Construtor para que, ao finalizar uma versão estável do código, ele execute um 'Auto-Commit'.
+
+O sistema deve realizar o git add, git commit -m [Mensagem gerada pela IA] e git push para a branch main.
+
+Implemente uma lógica de 'Diff' para garantir que apenas ficheiros alterados sejam enviados, otimizando o uso da API.
+
+4. Interface de Versionamento na UI da Jad.ia:
+
+Adicione um botão [🚀 Sincronizar com GitHub] na barra de ferramentas.
+
+Exiba um indicador de status (ex: 'Sincronizado', 'Enviando alterações...') e o link direto para o repositório criado.
+
+Mostre um pequeno histórico de commits (log) dentro da interface da Jad.ia para que o usuário veja a evolução do projeto.
+
+5. Gestão de .gitignore:
+
+A Jad.ia deve gerar automaticamente um ficheiro .gitignore apropriado para cada projeto (ex: ignorando node_modules, .env e ficheiros de cache do Replit) para manter o repositório limpo."
+
+🛠️ Passos Essenciais antes de Executar:
+Gerar o Token: Vá às definições do seu GitHub (Settings > Developer Settings > Personal Access Tokens > Tokens Classic) e crie um token com permissão de repo.
+
+Configurar os Secrets: No Replit, adicione a chave GITHUB_TOKEN com o valor que você gerou.
+
+Configurar o Git Global: Certifique-se de que o Replit Agent configure o seu user.email e user.name no ambiente para que os commits não fiquem como "Author: Anonymous".
+
+O que isto muda na Jad.ia?
+Portabilidade: Você pode começar o código na Jad.ia e continuá-lo em qualquer outro editor (VS Code) simplesmente clonando o repo.
+
+Segurança: Se algo for apagado no Replit, o código estará salvo no GitHub.
+
+Portfólio: A Jad.ia passa a construir o seu histórico de commits automaticamente enquanto você "vibe-coda".
