@@ -595,43 +595,56 @@ export default function VibeChatPanel({
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
-      let providerSwitch = "";
+      let sseBuffer = "";
+      let currentEvent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n");
+        sseBuffer = lines.pop() ?? "";
+
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
-            if (data.startsWith("[PROVIDER_SWITCH:")) {
-              providerSwitch = data.replace("[PROVIDER_SWITCH:", "").replace("]", "").trim();
-              setProviderSwitchMsg(`Fallback para ${providerSwitch}`);
-              continue;
-            }
+            if (!data) continue;
             try {
-              const parsed = JSON.parse(data);
-              const token = parsed.choices?.[0]?.delta?.content ?? "";
-              accumulated += token;
-              const displayContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
-              setMessages((prev) => {
-                const copy = [...prev];
-                const last = copy[copy.length - 1];
-                if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: displayContent };
-                return copy;
-              });
-              if (!isAnalysisMode) {
-                processVibeStream(accumulated);
-                const codeBlocks = extractAllCodeBlocks(accumulated);
-                if (codeBlocks.length > 0) {
-                  const lastBlock = codeBlocks[codeBlocks.length - 1];
-                  onLiveCodeUpdate(lastBlock.code, lastBlock.lang);
+              const parsed = JSON.parse(data) as Record<string, unknown>;
+
+              if (currentEvent === "token" || parsed.token !== undefined) {
+                const token = (parsed.token as string) ?? "";
+                accumulated += token;
+                const displayContent = vibeMode ? stripVibeMarkers(accumulated) : accumulated;
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const last = copy[copy.length - 1];
+                  if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: displayContent };
+                  return copy;
+                });
+                if (!isAnalysisMode) {
+                  processVibeStream(accumulated);
+                  const codeBlocks = extractAllCodeBlocks(accumulated);
+                  if (codeBlocks.length > 0) {
+                    const lastBlock = codeBlocks[codeBlocks.length - 1];
+                    onLiveCodeUpdate(lastBlock.code, lastBlock.lang);
+                  }
                 }
+              } else if (currentEvent === "provider_switch") {
+                const msg = (parsed.message as string) ?? "Alternando provedor...";
+                setProviderSwitchMsg(`Fallback: ${msg}`);
+              } else if (currentEvent === "error") {
+                const msg = (parsed.message as string) ?? "Erro ao processar resposta.";
+                throw new Error(msg);
               }
-            } catch { /* silent */ }
+            } catch (parseErr) {
+              if (parseErr instanceof SyntaxError) continue;
+              throw parseErr;
+            }
           }
+          if (line === "") currentEvent = "";
         }
       }
 
