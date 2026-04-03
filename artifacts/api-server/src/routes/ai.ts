@@ -401,38 +401,23 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
 
     const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_CODER_MODEL;
 
-    let groqRes: Response;
+    let groqRes: Response | null = null;
     try {
       groqRes = await callGroq(fullMessages, groqModel, true);
       if (!groqRes.ok && groqModel === GROQ_CODER_MODEL) {
-        logger.warn(`Qwen indisponível (${groqRes.status}), tentando fallback...`);
+        logger.warn(`Qwen indisponível (${groqRes.status}), tentando llama fallback...`);
         groqRes = await callGroq(fullMessages, GROQ_FALLBACK_MODEL, true);
       }
     } catch (err: unknown) {
-      const msg = (err as Error).message ?? "";
-      const isRateLimit = msg.includes("429") || msg.toLowerCase().includes("rate limit");
-      if (isRateLimit) {
-        logger.warn("Alternando provedor por estabilidade...");
-        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
-        await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
-        sendEvent("done", {});
-        res.end();
-        return;
-      }
-      throw err;
+      logger.warn({ err }, "Erro de rede no Groq, alternando para Gemini...");
+      groqRes = null;
     }
 
-    if (!groqRes.ok) {
-      if (groqRes.status === 429 || groqRes.status >= 500) {
-        logger.warn("Alternando provedor por estabilidade...");
-        sendEvent("provider_switch", { message: "Alternando provedor por estabilidade..." });
-        await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
-        sendEvent("done", {});
-        res.end();
-        return;
-      }
-      const errText = await groqRes.text();
-      sendEvent("error", { message: `Groq API error: ${errText}` });
+    if (!groqRes || !groqRes.ok) {
+      logger.warn(`Groq indisponível (status: ${groqRes?.status ?? "erro de rede"}), alternando para Gemini...`);
+      sendEvent("provider_switch", { message: "Alternando para Gemini..." });
+      await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
+      sendEvent("done", {});
       res.end();
       return;
     }
