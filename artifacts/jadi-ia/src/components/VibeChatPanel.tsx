@@ -232,26 +232,26 @@ function VibeCodeBlock({ content, lang }: { content: string; lang: string }) {
 function VibeFilesProgress({ files }: { files: VibeFile[] }) {
   if (files.length === 0) return null;
   return (
-    <div className="mx-2 mb-2 rounded-xl border border-teal-500/20 overflow-hidden" style={{ background: "rgba(0,137,123,0.06)" }}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-teal-500/15">
-        <FolderOpen className="h-3.5 w-3.5 text-teal-400" />
-        <span className="text-[11px] font-mono text-teal-400 font-medium">Motor de Arquivos</span>
+    <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,107,53,0.2)", background: "rgba(255,107,53,0.05)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "rgba(255,107,53,0.15)" }}>
+        <FolderOpen className="h-3.5 w-3.5" style={{ color: "#FF6B35" }} />
+        <span className="text-[11px] font-mono font-medium" style={{ color: "#FF6B35" }}>Motor de Arquivos</span>
       </div>
       <div className="p-2 space-y-1">
         {files.map((f) => (
           <div key={f.name} className="flex items-center gap-2 px-2 py-1 rounded-lg">
             {f.status === "done" ? (
-              <CheckCircle2 className="h-3 w-3 text-green-400 flex-shrink-0" />
+              <CheckCircle2 className="h-3 w-3 flex-shrink-0" style={{ color: "#00897B" }} />
             ) : f.status === "writing" ? (
-              <Loader2 className="h-3 w-3 text-teal-400 animate-spin flex-shrink-0" />
+              <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ color: "#FF6B35" }} />
             ) : (
-              <div className="h-3 w-3 rounded-full border border-white/20 flex-shrink-0" />
+              <div className="h-3 w-3 rounded-full border flex-shrink-0" style={{ borderColor: "rgba(255,255,255,0.2)" }} />
             )}
-            <span className={`text-[10px] font-mono flex-1 truncate ${f.status === "done" ? "text-green-400" : f.status === "writing" ? "text-teal-300" : "text-muted-foreground/60"}`}>
+            <span className="text-[10px] font-mono flex-1 truncate" style={{ color: f.status === "done" ? "#00897B" : f.status === "writing" ? "#FF6B35" : "rgba(255,255,255,0.3)" }}>
               {f.name}
             </span>
-            {f.status === "done" && <span className="text-[9px] font-mono text-green-500/70">salvo</span>}
-            {f.status === "writing" && <span className="text-[9px] font-mono text-teal-400/70 animate-pulse">escrevendo...</span>}
+            {f.status === "done" && <span className="text-[9px] font-mono" style={{ color: "rgba(0,137,123,0.7)" }}>salvo</span>}
+            {f.status === "writing" && <span className="text-[9px] font-mono animate-pulse" style={{ color: "rgba(255,107,53,0.7)" }}>escrevendo...</span>}
           </div>
         ))}
       </div>
@@ -262,20 +262,20 @@ function VibeFilesProgress({ files }: { files: VibeFile[] }) {
 function AssetLogPanel({ entries }: { entries: AssetLogEntry[] }) {
   if (entries.length === 0) return null;
   return (
-    <div className="mx-2 mb-2 rounded-xl border border-orange-500/20 overflow-hidden" style={{ background: "rgba(249,115,22,0.05)" }}>
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-orange-500/15">
-        <Package className="h-3.5 w-3.5 text-orange-400" />
-        <span className="text-[11px] font-mono font-medium text-orange-400">Log de Ativos</span>
+    <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,0,204,0.15)", background: "rgba(255,0,204,0.04)" }}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "rgba(255,0,204,0.12)" }}>
+        <Package className="h-3.5 w-3.5" style={{ color: "#FF00CC" }} />
+        <span className="text-[11px] font-mono font-medium" style={{ color: "#FF00CC" }}>Log de Ativos</span>
       </div>
       <div className="p-2 space-y-1 max-h-36 overflow-y-auto">
         {entries.map((entry, i) => (
           <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg">
             {entry.type === "image" && <ImageIcon className="h-3 w-3 text-blue-400 flex-shrink-0" />}
-            {entry.type === "font" && <Globe className="h-3 w-3 text-purple-400 flex-shrink-0" />}
-            {entry.type === "sound" && <Volume2 className="h-3 w-3 text-yellow-400 flex-shrink-0" />}
+            {entry.type === "font" && <Globe className="h-3 w-3 flex-shrink-0" style={{ color: "#FF6B35" }} />}
+            {entry.type === "sound" && <Volume2 className="h-3 w-3 flex-shrink-0" style={{ color: "#00897B" }} />}
             <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-mono text-muted-foreground/70 mr-1">{entry.label}:</span>
-              <span className="text-[10px] font-mono text-foreground/80 truncate block">{entry.value}</span>
+              <span className="text-[10px] font-mono mr-1" style={{ color: "rgba(255,255,255,0.4)" }}>{entry.label}:</span>
+              <span className="text-[10px] font-mono truncate block" style={{ color: "rgba(255,255,255,0.7)" }}>{entry.value}</span>
             </div>
           </div>
         ))}
@@ -688,7 +688,7 @@ export default function VibeChatPanel({
       animate={{ width: 520, opacity: 1 }}
       exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex-shrink-0 flex overflow-hidden border-r border-border"
+      className="relative flex-shrink-0 flex overflow-hidden border-r border-border"
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
@@ -863,32 +863,28 @@ export default function VibeChatPanel({
         </div>
       </div>
 
-      {/* ═══════════════════════════════ VIBE PANEL (DARK GRADIENT) ═══════════════════════════════ */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#06090f" }}>
+      {/* ═══════════════════════════════ VIBE PANEL (HOME GRADIENT) ═══════════════════════════════ */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "linear-gradient(160deg, #011a12 0%, #150700 50%, #140016 100%)" }}>
         {/* Header Vibe */}
-        <div className="flex-shrink-0 px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+        <div className="flex-shrink-0 px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,107,53,0.15)", background: "linear-gradient(135deg, #00897B 0%, #FF6B35 55%, #FF00CC 100%)" }}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0d4429 0%, #14b8a6 50%, #ec4899 100%)" }}>
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(4px)" }}>
                 <Zap className="h-3.5 w-3.5 text-white" />
               </div>
               <div>
-                <p className="text-[11px] font-black leading-none">
-                  <span style={{ background: "linear-gradient(90deg, #4ade80 0%, #14b8a6 35%, #f97316 70%, #ec4899 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                    Vibe Coding
-                  </span>
-                </p>
-                <p className="text-[9px] font-mono leading-none mt-0.5 tracking-wider" style={{ color: "#ec4899" }}>AQUI VOCÊ REALIZA</p>
+                <p className="text-white text-xs font-black leading-none tracking-tight drop-shadow">Vibe Coding</p>
+                <p className="text-[9px] font-mono leading-none mt-0.5 tracking-widest text-white/70">AQUI VOCÊ REALIZA</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               {vibeMode && (
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(20,184,166,0.1)", color: "#14b8a6", borderColor: "rgba(20,184,166,0.3)" }}>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(0,0,0,0.25)", color: "rgba(255,255,255,0.9)", borderColor: "rgba(255,255,255,0.25)" }}>
                   multi-arquivo
                 </span>
               )}
-              <span className="flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(74,222,128,0.08)", color: "#4ade80", borderColor: "rgba(74,222,128,0.2)" }}>
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              <span className="flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded-full border" style={{ background: "rgba(0,0,0,0.2)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.2)" }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse inline-block" />
                 ao vivo
               </span>
             </div>
@@ -899,21 +895,25 @@ export default function VibeChatPanel({
         <div ref={vibeScrollRef} className="flex-1 overflow-y-auto p-2.5 space-y-2.5 scroll-smooth">
           {vibeMessages.length === 0 && !isAnalyzing && (
             <div className="flex flex-col items-center justify-center h-full gap-3 px-2 py-8 text-center">
-              <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(13,68,41,0.3) 0%, rgba(236,72,153,0.15) 100%)", border: "1px solid rgba(236,72,153,0.2)" }}>
-                <Zap className="h-5 w-5" style={{ color: "#ec4899" }} />
+              <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #00897B22 0%, #FF00CC18 100%)", border: "1px solid rgba(255,107,53,0.3)" }}>
+                <Zap className="h-5 w-5" style={{ color: "#FF6B35" }} />
               </div>
               <div>
-                <p className="text-sm font-bold mb-1" style={{ background: "linear-gradient(90deg, #4ade80, #14b8a6, #f97316, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                <p className="text-sm font-bold mb-1" style={{ background: "linear-gradient(135deg, #00897B 0%, #FF6B35 50%, #FF00CC 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                   Pronto para criar
                 </p>
-                <p className="text-muted-foreground text-[11px] leading-relaxed">Use a análise do painel ao lado ou descreva diretamente o que quer construir.</p>
+                <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>Use a análise do painel ao lado ou descreva diretamente o que quer construir.</p>
               </div>
               <div className="w-full space-y-1 mt-2">
                 {QUICK_COMMANDS.map((c) => (
                   <button key={c.cmd} onClick={() => { setVibeInput(c.cmd + " "); vibeTextareaRef.current?.focus(); }}
-                    className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-mono border border-white/5 hover:border-teal-500/30 hover:bg-teal-500/5 transition-all text-left">
-                    <span className="text-teal-400 font-semibold min-w-[56px]">{c.cmd}</span>
-                    <span className="text-muted-foreground/70 truncate">{c.desc}</span>
+                    className="flex w-full items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all text-left"
+                    style={{ border: "1px solid rgba(255,107,53,0.12)", background: "rgba(255,107,53,0.04)", color: "rgba(255,255,255,0.6)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.border = "1px solid rgba(255,107,53,0.3)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,107,53,0.1)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.border = "1px solid rgba(255,107,53,0.12)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,107,53,0.04)"; }}
+                  >
+                    <span className="font-semibold min-w-[56px]" style={{ color: "#FF6B35" }}>{c.cmd}</span>
+                    <span className="truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{c.desc}</span>
                   </button>
                 ))}
               </div>
@@ -926,10 +926,10 @@ export default function VibeChatPanel({
                 msg.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"
               }`}
                 style={msg.role === "user"
-                  ? { background: "linear-gradient(135deg, #14b8a6 0%, #0d4429 100%)", color: "white" }
+                  ? { background: "linear-gradient(135deg, #00897B 0%, #FF6B35 55%, #FF00CC 100%)", color: "white" }
                   : msg.isDecision
-                    ? { background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)", color: "rgba(255,255,255,0.85)" }
-                    : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)" }
+                    ? { background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.2)", color: "rgba(255,255,255,0.85)" }
+                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)" }
                 }
               >
                 {msg.attachments && msg.attachments.length > 0 && (
@@ -953,7 +953,7 @@ export default function VibeChatPanel({
                         : <span key={pi} className="whitespace-pre-wrap">{part.content}</span>
                     )}
                     {msg.isStreaming && (
-                      <span className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle" style={{ background: "#ec4899" }} />
+                      <span className="inline-block w-1.5 h-3.5 ml-0.5 animate-pulse rounded-sm align-middle" style={{ background: "#FF6B35" }} />
                     )}
                   </div>
                 ) : (
@@ -966,11 +966,11 @@ export default function VibeChatPanel({
           {isStreaming && activeAgent === "construcao" && statusText && (
             <div className="flex items-center gap-2 px-2 py-1">
               <div className="flex gap-0.5">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: "#ec4899", animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                {[0, 1, 2].map((j) => (
+                  <div key={j} className="h-1.5 w-1.5 rounded-full" style={{ background: j === 0 ? "#00897B" : j === 1 ? "#FF6B35" : "#FF00CC", animation: `pulse 1.2s ${j * 0.2}s infinite` }} />
                 ))}
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground">{statusText}</span>
+              <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.5)" }}>{statusText}</span>
             </div>
           )}
         </div>
@@ -978,9 +978,9 @@ export default function VibeChatPanel({
         <VibeFilesProgress files={vibeFiles} />
 
         {isFetchingAssets && (
-          <div className="mx-2 mb-2 px-3 py-2 rounded-xl border border-orange-500/20 flex items-center gap-2" style={{ background: "rgba(249,115,22,0.05)" }}>
-            <Loader2 className="h-3 w-3 animate-spin text-orange-400" />
-            <span className="text-[10px] font-mono text-orange-400">Buscando assets...</span>
+          <div className="mx-2 mb-2 px-3 py-2 rounded-xl flex items-center gap-2" style={{ border: "1px solid rgba(255,107,53,0.2)", background: "rgba(255,107,53,0.07)" }}>
+            <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#FF6B35" }} />
+            <span className="text-[10px] font-mono" style={{ color: "#FF6B35" }}>Buscando assets...</span>
           </div>
         )}
 
@@ -988,7 +988,7 @@ export default function VibeChatPanel({
 
         {providerSwitchMsg && !isStreaming && (
           <div className="px-3 py-1.5 flex-shrink-0">
-            <div className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+            <div className="flex items-center gap-2 text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.4)" }}>
               <AlertCircle className="h-3 w-3 text-yellow-500" />
               {providerSwitchMsg}
             </div>
@@ -996,17 +996,17 @@ export default function VibeChatPanel({
         )}
 
         {/* Vibe Input */}
-        <div className="p-2 flex-shrink-0 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+        <div className="p-2 flex-shrink-0 border-t" style={{ borderColor: "rgba(255,107,53,0.15)" }}>
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-1.5">
               {attachments.map((att) => (
-                <div key={att.id} className="relative flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-2 py-1 group">
+                <div key={att.id} className="relative flex items-center gap-1.5 rounded-lg px-2 py-1 group" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   {att.type === "image" ? (
-                    <><Image className="h-3 w-3 text-blue-400 flex-shrink-0" /><img src={att.preview} alt="" className="h-5 w-5 rounded object-cover" /><span className="text-[10px] text-muted-foreground font-mono">imagem</span></>
+                    <><Image className="h-3 w-3 text-blue-400 flex-shrink-0" /><img src={att.preview} alt="" className="h-5 w-5 rounded object-cover" /><span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.5)" }}>imagem</span></>
                   ) : (
-                    <><FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" /><span className="text-[10px] text-muted-foreground font-mono max-w-[100px] truncate">{att.preview}</span></>
+                    <><FileText className="h-3 w-3 text-yellow-400 flex-shrink-0" /><span className="text-[10px] font-mono max-w-[100px] truncate" style={{ color: "rgba(255,255,255,0.5)" }}>{att.preview}</span></>
                   )}
-                  <button onClick={() => setAttachments((p) => p.filter((a) => a.id !== att.id))} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all ml-1">
+                  <button onClick={() => setAttachments((p) => p.filter((a) => a.id !== att.id))} className="opacity-0 group-hover:opacity-100 transition-all ml-1" style={{ color: "rgba(255,100,100,0.7)" }}>
                     <Trash2 className="h-2.5 w-2.5" />
                   </button>
                 </div>
@@ -1015,18 +1015,21 @@ export default function VibeChatPanel({
           )}
 
           {showVibeCommands && (
-            <div className="mb-1.5 rounded-xl border border-white/10 overflow-hidden" style={{ background: "rgba(6,9,15,0.98)" }}>
+            <div className="mb-1.5 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,107,53,0.2)", background: "linear-gradient(160deg, #011a12 0%, #150700 80%, #140016 100%)" }}>
               {QUICK_COMMANDS.filter((c) => c.cmd.startsWith(vibeInput.toLowerCase())).map((c) => (
                 <button key={c.cmd} onClick={() => { setVibeInput(c.cmd + " "); setShowVibeCommands(false); vibeTextareaRef.current?.focus(); }}
-                  className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
-                  <span className="text-[10px] font-mono text-teal-400">{c.cmd}</span>
-                  <span className="text-[10px] text-muted-foreground">{c.desc}</span>
+                  className="w-full text-left px-3 py-2 flex items-center gap-2 transition-colors border-b last:border-0" style={{ borderColor: "rgba(255,107,53,0.1)" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,107,53,0.08)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                >
+                  <span className="text-[10px] font-mono" style={{ color: "#FF6B35" }}>{c.cmd}</span>
+                  <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{c.desc}</span>
                 </button>
               ))}
             </div>
           )}
 
-          <div className="rounded-xl border border-white/10 overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,107,53,0.2)", background: "rgba(255,255,255,0.04)" }}>
             <textarea
               ref={vibeTextareaRef}
               value={vibeInput}
@@ -1043,20 +1046,21 @@ export default function VibeChatPanel({
               placeholder={isStreaming && activeAgent === "construcao" ? "Aguarde a resposta..." : vibeMode ? "Descreva o sistema que quer criar..." : "Descreva o que quer construir... (/ para comandos)"}
               disabled={isStreaming && activeAgent === "construcao"}
               rows={1}
-              className="w-full bg-transparent px-3 pt-2.5 pb-1 text-[11px] font-mono text-foreground placeholder:text-muted-foreground/50 resize-none outline-none leading-relaxed disabled:opacity-50"
-              style={{ maxHeight: "120px" }}
+              className="w-full bg-transparent px-3 pt-2.5 pb-1 text-[11px] font-mono resize-none outline-none leading-relaxed disabled:opacity-50"
+              style={{ maxHeight: "120px", color: "rgba(255,255,255,0.85)" }}
             />
             <div className="px-2 pb-2 pt-1">
               {isStreaming && activeAgent === "construcao" ? (
                 <button onClick={stopStream}
-                  className="w-full h-9 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                  className="w-full h-9 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  style={{ border: "1px solid rgba(255,100,100,0.3)", background: "rgba(255,100,100,0.1)", color: "rgba(255,120,120,0.9)" }}>
                   <X className="h-3 w-3" /> Parar geração
                 </button>
               ) : (
                 <button onClick={handleBuilderRequest}
                   disabled={!vibeInput.trim() || (isStreaming && activeAgent === "analise")}
                   className="w-full h-9 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: "linear-gradient(135deg, #0d4429 0%, #14b8a6 45%, #f97316 80%, #ec4899 100%)", color: "white", boxShadow: "0 2px 12px rgba(236,72,153,0.25)" }}>
+                  style={{ background: "linear-gradient(135deg, #00897B 0%, #FF6B35 55%, #FF00CC 100%)", color: "white", boxShadow: "0 2px 14px rgba(255,107,53,0.3)" }}>
                   <Zap className="h-3.5 w-3.5" />
                   {vibeMode ? "Iniciar Vibe Coding" : "Construir"}
                 </button>
