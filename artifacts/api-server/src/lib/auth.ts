@@ -1,25 +1,27 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, sessionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { Request, Response, NextFunction } from "express";
-
-const SESSIONS: Map<string, number> = new Map();
 
 export function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
-export function setSession(token: string, userId: number): void {
-  SESSIONS.set(token, userId);
+export async function setSession(token: string, userId: number): Promise<void> {
+  await db.insert(sessionsTable).values({ token, userId }).onConflictDoNothing();
 }
 
-export function getSession(token: string): number | undefined {
-  return SESSIONS.get(token);
+export async function getSession(token: string): Promise<number | undefined> {
+  const [session] = await db
+    .select({ userId: sessionsTable.userId })
+    .from(sessionsTable)
+    .where(eq(sessionsTable.token, token));
+  return session?.userId;
 }
 
-export function deleteSession(token: string): void {
-  SESSIONS.delete(token);
+export async function deleteSession(token: string): Promise<void> {
+  await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -37,7 +39,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
   const token = authHeader.slice(7);
-  const userId = getSession(token);
+  const userId = await getSession(token);
   if (!userId) {
     res.status(401).json({ error: "Token inválido ou expirado" });
     return;
