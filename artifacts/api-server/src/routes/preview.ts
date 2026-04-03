@@ -104,7 +104,7 @@ router.get("/projects/:id/preview", async (req, res): Promise<void> => {
     return;
   }
 
-  const userId = getSession(token);
+  const userId = await getSession(token);
   if (!userId) {
     res.status(401).send("<html><body><p>Token inválido ou expirado.</p></body></html>");
     return;
