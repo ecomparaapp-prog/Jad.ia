@@ -30,7 +30,7 @@ interface UnsplashPhoto {
   links: { download: string };
 }
 
-router.get("/api/images/pixabay", requireAuth, async (req, res) => {
+router.get("/images/pixabay", requireAuth, async (req, res) => {
   const apiKey = process.env.PIXABAY_API_KEY;
   if (!apiKey) {
     res.status(503).json({ error: "PIXABAY_API_KEY não configurada" });
@@ -49,9 +49,8 @@ router.get("/api/images/pixabay", requireAuth, async (req, res) => {
       q,
       image_type: imageType,
       page: String(page),
-      per_page: String(Math.min(perPage, 50)),
+      per_page: String(Math.min(perPage, 20)),
       safesearch: "true",
-      lang: "pt",
     });
     if (orientation) params.set("orientation", orientation);
 
@@ -87,7 +86,7 @@ router.get("/api/images/pixabay", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/api/images/unsplash", requireAuth, async (req, res) => {
+router.get("/images/unsplash", requireAuth, async (req, res) => {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   if (!accessKey) {
     res.status(503).json({ error: "UNSPLASH_ACCESS_KEY não configurada" });
@@ -145,7 +144,7 @@ router.get("/api/images/unsplash", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/api/images/search", requireAuth, async (req, res) => {
+router.get("/images/search", requireAuth, async (req, res) => {
   const q = String(req.query.q ?? "nature");
   const source = String(req.query.source ?? "both");
   const page = Number(req.query.page ?? 1);
