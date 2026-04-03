@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, DragEvent, ClipboardEvent, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, useCallback, DragEvent, ClipboardEvent, KeyboardEvent, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -87,6 +87,7 @@ interface VibeChatPanelProps {
   onFileWrite?: (filename: string, content: string) => void;
   prefillInput?: string;
   onPrefillConsumed?: () => void;
+  centerContent?: ReactNode;
 }
 
 const QUICK_COMMANDS = [
@@ -300,6 +301,7 @@ export default function VibeChatPanel({
   onFileWrite,
   prefillInput,
   onPrefillConsumed,
+  centerContent,
 }: VibeChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [analyzeInput, setAnalyzeInput] = useState("");
@@ -684,11 +686,11 @@ export default function VibeChatPanel({
 
   return (
     <motion.div
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 520, opacity: 1 }}
-      exit={{ width: 0, opacity: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="relative flex-shrink-0 flex overflow-hidden border-r border-border"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="relative flex-1 flex overflow-hidden min-w-0"
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
@@ -702,8 +704,12 @@ export default function VibeChatPanel({
         </div>
       )}
 
-      {/* ═══════════════════════════════ ANÁLISE PANEL (GREEN/WHITE) ═══════════════════════════════ */}
-      <div className="w-[248px] flex-shrink-0 flex flex-col overflow-hidden border-r" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+      {/* ═══════════════════════════════ VIBE PANEL (HOME GRADIENT) — LEFT ═══════════════════════════════ */}
+      {/* (rendered first — see bottom of file for Análise panel which is RIGHT) */}
+
+      {/* ═══════════════════════════════ ANÁLISE PANEL (GREEN/WHITE) — RIGHT ═══════════════════════════════ */}
+      {/* TEMPORARILY placed here but will move — see JSX reorder below */}
+      <div className="w-[240px] flex-shrink-0 flex flex-col overflow-hidden border-r" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
         {/* Header Analysis */}
         <div className="flex-shrink-0 px-3 py-2.5" style={{ background: "linear-gradient(135deg, #052e16 0%, #064e3b 100%)" }}>
           <div className="flex items-center justify-between mb-1">
