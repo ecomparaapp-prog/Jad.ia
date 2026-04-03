@@ -109,19 +109,23 @@ export default function Login() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-sm"
         >
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <img src={theme === "dark" ? logoBranca : logo} alt="Jad.ia" className="h-10 w-10 object-contain" />
-            <span className="font-bold text-xl" style={{ fontFamily: 'var(--app-font-serif)' }}>Jad.ia</span>
+          {/* Centered logo + brand header */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <img
+              src={theme === "dark" ? logoBranca : logo}
+              alt="Jad.ia"
+              className="object-contain mb-3"
+              style={{ width: 160, height: 160 }}
+            />
+            <span className="font-bold text-2xl mb-6" style={{ fontFamily: 'var(--app-font-serif)' }}>Jad.ia</span>
+            <h1
+              className="text-3xl font-bold mb-1"
+              style={{ fontFamily: 'var(--app-font-serif)' }}
+            >
+              Entrar
+            </h1>
+            <p className="text-sm text-muted-foreground">Acesse sua conta no Jad.ia</p>
           </div>
-
-          <h1
-            className="text-3xl font-bold mb-2"
-            style={{ fontFamily: 'var(--app-font-serif)' }}
-          >
-            Entrar
-          </h1>
-          <p className="text-sm text-muted-foreground mb-8">Acesse sua conta no Jad.ia</p>
 
           {/* Test credentials */}
           <div
