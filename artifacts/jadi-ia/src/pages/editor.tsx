@@ -44,6 +44,7 @@ import {
   Layers,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import VibeChatPanel from "@/components/VibeChatPanel";
 import PreviewPanel from "@/components/PreviewPanel";
 import GeneratePromptModal from "@/components/GeneratePromptModal";
