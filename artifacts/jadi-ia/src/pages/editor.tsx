@@ -683,19 +683,12 @@ export default function Editor() {
             </TabsContent>
 
             <TabsContent value="git" className="flex-1 overflow-auto m-0 p-3">
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs font-medium mb-1">Repositório Git</p>
-                  <p className="text-xs text-muted-foreground">Integração com GitHub em breve.</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <GitBranch className="h-3.5 w-3.5" />
-                    <span>main</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Nenhum commit ainda</p>
-                </div>
-              </div>
+              {project && (
+                <GitHubPanel
+                  projectId={projectId}
+                  projectName={project.name}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </Panel>
