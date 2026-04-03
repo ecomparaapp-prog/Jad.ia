@@ -684,23 +684,7 @@ export default function Editor() {
           </Tabs>
         </div>
 
-        {/* ── 2. PREVIEW — centro ── */}
-        {showPreview && (
-          <div
-            className="border-r border-border flex-shrink-0 overflow-hidden"
-            style={{ width: "300px" }}
-          >
-            <PreviewPanel
-              projectId={projectId}
-              token={token}
-              revisionId={previewRevision}
-              currentFileName={currentFile?.name}
-              projectLanguage={stackDecision?.language ?? project.language}
-            />
-          </div>
-        )}
-
-        {/* ── 3. CHAT ANÁLISE + VIBE — direita da preview ── */}
+        {/* ── 2. ANÁLISE + PREVIEW + VIBE — juntos, na ordem certa ── */}
         <AnimatePresence>
           {showChat && (
             <VibeChatPanel
@@ -719,9 +703,41 @@ export default function Editor() {
               onFileWrite={handleFileWrite}
               prefillInput={pendingPrefill}
               onPrefillConsumed={() => setPendingPrefill("")}
+              centerContent={
+                showPreview ? (
+                  <div
+                    className="border-x border-border flex-shrink-0 overflow-hidden"
+                    style={{ width: "300px" }}
+                  >
+                    <PreviewPanel
+                      projectId={projectId}
+                      token={token}
+                      revisionId={previewRevision}
+                      currentFileName={currentFile?.name}
+                      projectLanguage={stackDecision?.language ?? project.language}
+                    />
+                  </div>
+                ) : undefined
+              }
             />
           )}
         </AnimatePresence>
+
+        {/* Preview standalone quando o chat está fechado */}
+        {!showChat && showPreview && (
+          <div
+            className="border-r border-border flex-shrink-0 overflow-hidden"
+            style={{ width: "300px" }}
+          >
+            <PreviewPanel
+              projectId={projectId}
+              token={token}
+              revisionId={previewRevision}
+              currentFileName={currentFile?.name}
+              projectLanguage={stackDecision?.language ?? project.language}
+            />
+          </div>
+        )}
 
         {/* ── 4. EDITOR DE CÓDIGO — extremidade direita ── */}
         <div className="flex-1 flex overflow-hidden font-mono text-sm" style={{ minHeight: 0 }}>

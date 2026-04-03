@@ -85,9 +85,9 @@ interface VibeChatPanelProps {
   onReanalyze: () => void;
   vibeMode?: boolean;
   onFileWrite?: (filename: string, content: string) => void;
+  centerContent?: ReactNode;
   prefillInput?: string;
   onPrefillConsumed?: () => void;
-  centerContent?: ReactNode;
 }
 
 const QUICK_COMMANDS = [
@@ -868,6 +868,9 @@ export default function VibeChatPanel({
           </div>
         </div>
       </div>
+
+      {/* ── PREVIEW SLOT — entre Análise e Vibe ── */}
+      {centerContent}
 
       {/* ═══════════════════════════════ VIBE PANEL (HOME GRADIENT) ═══════════════════════════════ */}
       <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "linear-gradient(160deg, #011a12 0%, #150700 50%, #140016 100%)" }}>
