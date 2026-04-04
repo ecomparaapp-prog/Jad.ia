@@ -77,13 +77,8 @@ export default function MobilePanel({ projectId }: MobilePanelProps) {
     if (sseRef.current) {
       sseRef.current.close();
     }
-    const url = `${apiBase}/projects/${projectId}/mobile/status`;
-    const es = new EventSource(url, {
-      withCredentials: false,
-    });
-
-    const source = es as EventSource & { _token?: string };
-    void source;
+    const url = `${apiBase}/projects/${projectId}/mobile/status?token=${encodeURIComponent(token ?? "")}`;
+    const es = new EventSource(url);
 
     es.onmessage = (e: MessageEvent) => {
       try {
@@ -105,7 +100,7 @@ export default function MobilePanel({ projectId }: MobilePanelProps) {
     };
 
     sseRef.current = es;
-  }, [projectId]);
+  }, [projectId, token]);
 
   useEffect(() => {
     void fetch(`${apiBase}/projects/${projectId}/mobile/state`, {

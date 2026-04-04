@@ -32,14 +32,22 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function resolveAuth(req: Request, res: Response, next: NextFunction, allowQuery: boolean): Promise<void> {
+  let rawToken: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    rawToken = authHeader.slice(7);
+  } else if (allowQuery && typeof req.query.token === "string") {
+    rawToken = req.query.token;
+  }
+
+  if (!rawToken) {
     res.status(401).json({ error: "Não autenticado" });
     return;
   }
-  const token = authHeader.slice(7);
-  const userId = await getSession(token);
+
+  const userId = await getSession(rawToken);
   if (!userId) {
     res.status(401).json({ error: "Token inválido ou expirado" });
     return;
@@ -50,6 +58,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
   (req as Request & { user: typeof user; token: string }).user = user;
-  (req as Request & { user: typeof user; token: string }).token = token;
+  (req as Request & { user: typeof user; token: string }).token = rawToken;
   next();
+}
+
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return resolveAuth(req, res, next, false);
+}
+
+export async function requireAuthSSE(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return resolveAuth(req, res, next, true);
 }

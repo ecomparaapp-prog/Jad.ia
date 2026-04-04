@@ -306,9 +306,29 @@ export default function Editor() {
     },
   });
 
+  const syncToMobile = useCallback(
+    async (filename: string, content: string) => {
+      if (!token) return;
+      try {
+        await fetch(`/api/projects/${projectId}/mobile/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ fileName: filename, content }),
+        });
+      } catch {
+        // sync mobile é best-effort, falha silenciosamente
+      }
+    },
+    [projectId, token],
+  );
+
   function handleSave() {
     if (!selectedFileId) return;
     setIsSaving(true);
+    const selectedFile = files?.find((f) => f.id === selectedFileId);
+    if (selectedFile) {
+      void syncToMobile(selectedFile.name, editingContent);
+    }
     updateFile.mutate({
       id: projectId,
       fileId: selectedFileId,
@@ -381,10 +401,12 @@ export default function Editor() {
         });
       }
 
+      void syncToMobile(filename, content);
+
       setPreviewRevision((r) => r + 1);
       if (!showPreview) setShowPreview(true);
     },
-    [files, projectId, showPreview],
+    [files, projectId, showPreview, syncToMobile],
   );
 
   function toggleVibeMode() {

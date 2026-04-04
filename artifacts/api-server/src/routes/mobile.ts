@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, projectFilesTable, projectsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requireAuthSSE } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { spawn, type ChildProcess } from "child_process";
 import path from "path";
@@ -194,7 +194,7 @@ function startExpoProcess(s: MobileSession) {
 }
 
 router.post("/projects/:id/mobile/start", requireAuth, async (req, res): Promise<void> => {
-  const authReq = req as typeof req & { userId: number };
+  const authReq = req as typeof req & { user: { id: number } };
   const projectId = parseInt(req.params.id, 10);
   if (isNaN(projectId)) { res.status(400).json({ error: "ID inválido" }); return; }
 
@@ -209,7 +209,7 @@ router.post("/projects/:id/mobile/start", requireAuth, async (req, res): Promise
 
   const newSession: MobileSession = {
     projectId,
-    userId: authReq.userId,
+    userId: authReq.user.id,
     process: null,
     status: "installing",
     tunnelUrl: null,
@@ -233,7 +233,7 @@ router.post("/projects/:id/mobile/start", requireAuth, async (req, res): Promise
       });
     }
 
-    await syncProjectFiles(projectId, authReq.userId);
+    await syncProjectFiles(projectId, authReq.user.id);
     newSession.status = "starting";
     broadcast(newSession, { type: "status", status: "starting", tunnelUrl: null });
 
@@ -258,7 +258,7 @@ router.post("/projects/:id/mobile/stop", requireAuth, async (req, res): Promise<
 });
 
 router.post("/projects/:id/mobile/sync", requireAuth, async (req, res): Promise<void> => {
-  const authReq = req as typeof req & { userId: number };
+  const authReq = req as typeof req & { user: { id: number } };
   const projectId = parseInt(req.params.id, 10);
   const { fileName, content } = req.body as { fileName?: string; content?: string };
 
@@ -276,12 +276,11 @@ router.post("/projects/:id/mobile/sync", requireAuth, async (req, res): Promise<
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, content);
     broadcast(session, { type: "sync", fileName });
-    res.json({ synced: true });
+    res.json({ synced: true, userId: authReq.user.id });
   } catch (err) {
     logger.error({ err }, "Erro ao sincronizar arquivo");
     res.status(500).json({ error: "Erro ao sincronizar" });
   }
-  void authReq;
 });
 
 router.post("/projects/:id/mobile/clear-cache", requireAuth, async (req, res): Promise<void> => {
@@ -311,7 +310,7 @@ router.post("/projects/:id/mobile/clear-cache", requireAuth, async (req, res): P
   }
 });
 
-router.get("/projects/:id/mobile/status", requireAuth, async (req, res): Promise<void> => {
+router.get("/projects/:id/mobile/status", requireAuthSSE, async (req, res): Promise<void> => {
   const projectId = parseInt(req.params.id, 10);
 
   res.setHeader("Content-Type", "text/event-stream");
