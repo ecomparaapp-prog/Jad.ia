@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, projectFilesTable, projectsTable, githubReposTable } from "@workspace/db";
+import { db, projectFilesTable, projectsTable, githubReposTable, githubOAuthTokensTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
@@ -7,12 +7,6 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 const GH = "https://api.github.com";
-
-function token(): string {
-  const t = process.env.GITHUB_TOKEN;
-  if (!t) throw Object.assign(new Error("GITHUB_TOKEN não configurado nos Secrets."), { status: 503 });
-  return t;
-}
 
 function ghHeaders(tk: string) {
   return {
@@ -24,8 +18,24 @@ function ghHeaders(tk: string) {
   };
 }
 
-async function gh(path: string, opts?: RequestInit): Promise<Response> {
-  const tk = token();
+async function getUserToken(userId: number): Promise<string> {
+  const [oauthToken] = await db
+    .select({ accessToken: githubOAuthTokensTable.accessToken })
+    .from(githubOAuthTokensTable)
+    .where(eq(githubOAuthTokensTable.userId, userId));
+
+  if (oauthToken) return oauthToken.accessToken;
+
+  const globalToken = process.env.GITHUB_TOKEN;
+  if (globalToken) return globalToken;
+
+  throw Object.assign(
+    new Error("GitHub não conectado. Conecte sua conta do GitHub na aba Git para continuar."),
+    { status: 401 }
+  );
+}
+
+async function gh(tk: string, path: string, opts?: RequestInit): Promise<Response> {
   return fetch(`${GH}${path}`, { ...opts, headers: { ...ghHeaders(tk), ...(opts?.headers ?? {}) } });
 }
 
@@ -112,8 +122,7 @@ router.get("/projects/:id/github", requireAuth, async (req, res): Promise<void> 
       .where(eq(githubReposTable.projectId, projectId));
 
     if (!repo) {
-      const hasToken = !!process.env.GITHUB_TOKEN;
-      res.json({ connected: false, hasToken });
+      res.json({ connected: false });
       return;
     }
 
@@ -138,7 +147,7 @@ router.post("/projects/:id/github/connect", requireAuth, async (req, res): Promi
   const { repoName: customName, isPrivate = false } = req.body as { repoName?: string; isPrivate?: boolean };
 
   try {
-    const tk = token();
+    const tk = await getUserToken(userId);
 
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
@@ -147,11 +156,11 @@ router.post("/projects/:id/github/connect", requireAuth, async (req, res): Promi
     const user = await getAuthenticatedUser(tk);
     const repoSlug = slugify(customName ?? project.name);
 
-    const checkRes = await gh(`/repos/${user.login}/${repoSlug}`);
+    const checkRes = await gh(tk, `/repos/${user.login}/${repoSlug}`);
     let repoData: { name: string; html_url: string; default_branch: string; full_name: string };
 
     if (checkRes.status === 404) {
-      const createRes = await gh("/user/repos", {
+      const createRes = await gh(tk, "/user/repos", {
         method: "POST",
         body: JSON.stringify({
           name: repoSlug,
@@ -192,7 +201,7 @@ router.post("/projects/:id/github/connect", requireAuth, async (req, res): Promi
       ];
 
       for (const file of initFiles) {
-        await gh(`/repos/${user.login}/${repoSlug}/contents/${file.path}`, {
+        await gh(tk, `/repos/${user.login}/${repoSlug}/contents/${file.path}`, {
           method: "PUT",
           body: JSON.stringify({
             message: `chore: inicializar repositório via Jad.ia`,
@@ -246,7 +255,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
   const { commitMessage } = req.body as { commitMessage?: string };
 
   try {
-    const tk = token();
+    const tk = await getUserToken(userId);
 
     const [project] = await db.select().from(projectsTable)
       .where(and(eq(projectsTable.id, projectId), eq(projectsTable.userId, userId)));
@@ -261,7 +270,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
     const { owner, repoName, defaultBranch } = repo;
     const user = await getAuthenticatedUser(tk);
 
-    const refRes = await gh(`/repos/${owner}/${repoName}/git/ref/heads/${defaultBranch}`);
+    const refRes = await gh(tk, `/repos/${owner}/${repoName}/git/ref/heads/${defaultBranch}`);
     let currentCommitSha: string | null = null;
     let currentTreeSha: string | null = null;
 
@@ -269,7 +278,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
       const refData = await refRes.json() as { object: { sha: string } };
       currentCommitSha = refData.object.sha;
 
-      const commitRes = await gh(`/repos/${owner}/${repoName}/git/commits/${currentCommitSha}`);
+      const commitRes = await gh(tk, `/repos/${owner}/${repoName}/git/commits/${currentCommitSha}`);
       if (commitRes.ok) {
         const commitData = await commitRes.json() as { tree: { sha: string } };
         currentTreeSha = commitData.tree.sha;
@@ -278,7 +287,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
 
     let existingFileShas: Record<string, string> = {};
     if (currentTreeSha) {
-      const treeRes = await gh(`/repos/${owner}/${repoName}/git/trees/${currentTreeSha}?recursive=1`);
+      const treeRes = await gh(tk, `/repos/${owner}/${repoName}/git/trees/${currentTreeSha}?recursive=1`);
       if (treeRes.ok) {
         const treeData = await treeRes.json() as { tree: Array<{ path: string; sha: string; type: string }> };
         for (const item of treeData.tree) {
@@ -299,7 +308,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
 
     const treeEntries: Array<{ path: string; mode: string; type: string; sha: string }> = [];
     for (const file of changedFiles) {
-      const blobRes = await gh(`/repos/${owner}/${repoName}/git/blobs`, {
+      const blobRes = await gh(tk, `/repos/${owner}/${repoName}/git/blobs`, {
         method: "POST",
         body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
       });
@@ -310,7 +319,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
 
     const newTreeBody: Record<string, unknown> = { tree: treeEntries };
     if (currentTreeSha) newTreeBody.base_tree = currentTreeSha;
-    const newTreeRes = await gh(`/repos/${owner}/${repoName}/git/trees`, {
+    const newTreeRes = await gh(tk, `/repos/${owner}/${repoName}/git/trees`, {
       method: "POST",
       body: JSON.stringify(newTreeBody),
     });
@@ -327,7 +336,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
     };
     if (currentCommitSha) newCommitBody.parents = [currentCommitSha];
 
-    const newCommitRes = await gh(`/repos/${owner}/${repoName}/git/commits`, {
+    const newCommitRes = await gh(tk, `/repos/${owner}/${repoName}/git/commits`, {
       method: "POST",
       body: JSON.stringify(newCommitBody),
     });
@@ -342,7 +351,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
       ? { sha: newCommit.sha, force: false }
       : { ref: `refs/heads/${defaultBranch}`, sha: newCommit.sha };
 
-    await gh(updateRefPath, { method: updateRefMethod, body: JSON.stringify(updateRefBody) });
+    await gh(tk, updateRefPath, { method: updateRefMethod, body: JSON.stringify(updateRefBody) });
 
     await db.update(githubReposTable).set({
       lastSyncAt: new Date(),
@@ -375,7 +384,8 @@ router.get("/projects/:id/github/commits", requireAuth, async (req, res): Promis
     const [repo] = await db.select().from(githubReposTable).where(eq(githubReposTable.projectId, projectId));
     if (!repo) { res.json([]); return; }
 
-    const commitsRes = await gh(`/repos/${repo.owner}/${repo.repoName}/commits?per_page=15`);
+    const tk = await getUserToken(userId);
+    const commitsRes = await gh(tk, `/repos/${repo.owner}/${repo.repoName}/commits?per_page=15`);
     if (!commitsRes.ok) { res.json([]); return; }
 
     const raw = await commitsRes.json() as Array<{

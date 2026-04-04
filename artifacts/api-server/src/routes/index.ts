@@ -11,11 +11,13 @@ import assetsRouter from "./assets";
 import contextRouter from "./context";
 import imagesRouter from "./images";
 import githubRouter from "./github";
+import oauthRouter from "./oauth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(oauthRouter);
 router.use(projectsRouter);
 router.use(filesRouter);
 router.use(secretsRouter);
