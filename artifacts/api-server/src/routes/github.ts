@@ -111,7 +111,7 @@ async function getAuthenticatedUser(tk: string): Promise<{ login: string; name: 
 
 router.get("/projects/:id/github", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   try {
     const [project] = await db.select().from(projectsTable)
@@ -143,7 +143,7 @@ router.get("/projects/:id/github", requireAuth, async (req, res): Promise<void> 
 
 router.post("/projects/:id/github/connect", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
   const { repoName: customName, isPrivate = false } = req.body as { repoName?: string; isPrivate?: boolean };
 
   try {
@@ -251,7 +251,7 @@ router.post("/projects/:id/github/connect", requireAuth, async (req, res): Promi
 
 router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
   const { commitMessage } = req.body as { commitMessage?: string };
 
   try {
@@ -374,7 +374,7 @@ router.post("/projects/:id/github/sync", requireAuth, async (req, res): Promise<
 
 router.get("/projects/:id/github/commits", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   try {
     const [project] = await db.select().from(projectsTable)
@@ -412,7 +412,7 @@ router.get("/projects/:id/github/commits", requireAuth, async (req, res): Promis
 
 router.delete("/projects/:id/github", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   try {
     const [project] = await db.select().from(projectsTable)

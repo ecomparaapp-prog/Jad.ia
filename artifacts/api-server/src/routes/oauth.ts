@@ -36,7 +36,7 @@ router.get("/auth/github/authorize", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
   const state = crypto.randomBytes(16).toString("hex");
   oauthStateMap.set(state, { userId, expiresAt: Date.now() + 10 * 60 * 1000 });
 
@@ -145,7 +145,7 @@ router.get("/auth/github/callback", async (req, res): Promise<void> => {
 });
 
 router.get("/auth/github/status", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   try {
     const [token] = await db.select({
@@ -178,7 +178,7 @@ router.get("/auth/github/status", requireAuth, async (req, res): Promise<void> =
 });
 
 router.delete("/auth/github/disconnect", requireAuth, async (req, res): Promise<void> => {
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   try {
     await db.delete(githubOAuthTokensTable).where(eq(githubOAuthTokensTable.userId, userId));

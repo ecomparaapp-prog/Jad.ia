@@ -9,7 +9,7 @@ const CONTEXT_FILE_NAME = ".jadia_context";
 
 router.get("/projects/:id/context", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   if (Number.isNaN(projectId)) {
     res.status(400).json({ error: "ID inválido" });
@@ -51,7 +51,7 @@ router.get("/projects/:id/context", requireAuth, async (req, res): Promise<void>
 
 router.post("/projects/:id/context", requireAuth, async (req, res): Promise<void> => {
   const projectId = Number(req.params.id);
-  const userId = (req as unknown as { userId: number }).userId;
+  const userId = (req as unknown as { user: { id: number } }).user.id;
 
   if (Number.isNaN(projectId)) {
     res.status(400).json({ error: "ID inválido" });

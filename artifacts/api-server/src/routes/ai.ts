@@ -498,12 +498,81 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
 
   try {
     if (isAnalyst) {
-      await streamGemini(fullMessages, (token) => {
-        sendEvent("token", { token });
-      });
-      sendEvent("done", {});
-      res.end();
-      return;
+      try {
+        await streamGemini(fullMessages, (token) => {
+          sendEvent("token", { token });
+        });
+        sendEvent("done", {});
+        res.end();
+        return;
+      } catch (geminiErr: unknown) {
+        const geminiStatus = (geminiErr as { status?: number })?.status;
+        logger.warn({ geminiStatus }, "Gemini indisponível no analista, alternando para Groq...");
+        sendEvent("provider_switch", { message: "Alternando para Groq..." });
+
+        // Fallback to Groq for analyst when Gemini fails
+        const groqRes = await callGroq(fullMessages, GROQ_CODER_MODEL, true);
+        if (!groqRes.ok) {
+          const fallbackRes = await callGroq(fullMessages, GROQ_FALLBACK_MODEL, true);
+          if (!fallbackRes.ok) {
+            if (geminiStatus === 429) {
+              sendEvent("error", { message: "Servidores de IA sobrecarregados. Aguarde alguns segundos e tente novamente." });
+            } else {
+              sendEvent("error", { message: "Erro ao processar resposta do analista. Tente novamente." });
+            }
+            res.end();
+            return;
+          }
+          const fallbackReader = fallbackRes.body!.getReader();
+          const fallbackDecoder = new TextDecoder();
+          let fallbackBuffer = "";
+          while (true) {
+            const { done, value } = await fallbackReader.read();
+            if (done) break;
+            fallbackBuffer += fallbackDecoder.decode(value, { stream: true });
+            const lines = fallbackBuffer.split("\n");
+            fallbackBuffer = lines.pop() ?? "";
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data: ")) continue;
+              const payload = trimmed.slice(6);
+              if (payload === "[DONE]") { sendEvent("done", {}); res.end(); return; }
+              try {
+                const parsed = JSON.parse(payload) as { choices?: Array<{ delta?: { content?: string } }> };
+                const token = parsed.choices?.[0]?.delta?.content;
+                if (token) sendEvent("token", { token });
+              } catch { /* skip */ }
+            }
+          }
+          sendEvent("done", {});
+          res.end();
+          return;
+        }
+        const groqReader = groqRes.body!.getReader();
+        const groqDecoder = new TextDecoder();
+        let groqBuffer = "";
+        while (true) {
+          const { done, value } = await groqReader.read();
+          if (done) break;
+          groqBuffer += groqDecoder.decode(value, { stream: true });
+          const lines = groqBuffer.split("\n");
+          groqBuffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
+            const payload = trimmed.slice(6);
+            if (payload === "[DONE]") { sendEvent("done", {}); res.end(); return; }
+            try {
+              const parsed = JSON.parse(payload) as { choices?: Array<{ delta?: { content?: string } }> };
+              const token = parsed.choices?.[0]?.delta?.content;
+              if (token) sendEvent("token", { token });
+            } catch { /* skip */ }
+          }
+        }
+        sendEvent("done", {});
+        res.end();
+        return;
+      }
     }
 
     const groqModel = hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : GROQ_CODER_MODEL;
