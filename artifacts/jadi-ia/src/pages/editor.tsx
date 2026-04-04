@@ -9,6 +9,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useGetProject,
   useListProjectFiles,
   useGetProjectFile,
@@ -113,6 +123,7 @@ export default function Editor() {
   const [previewRevision, setPreviewRevision] = useState(0);
   const [selectedLine, setSelectedLine] = useState<number | null>(null);
   const [pendingPrefill, setPendingPrefill] = useState<string>("");
+  const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
 
   const liveUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingFileContentsRef = useRef<Record<string, string>>({});
@@ -583,7 +594,9 @@ export default function Editor() {
                       <div
                         key={file.id}
                         className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer group transition-colors ${
-                          selectedFileId === file.id ? "bg-primary/15 text-primary" : "hover:bg-muted/50"
+                          selectedFileId === file.id
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground hover:bg-muted/60"
                         }`}
                         onClick={() => setSelectedFileId(file.id)}
                         data-testid={`file-item-${file.id}`}
@@ -593,14 +606,18 @@ export default function Editor() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-4 w-4 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                          className={`h-5 w-5 flex-shrink-0 transition-opacity ${
+                            selectedFileId === file.id
+                              ? "opacity-70 hover:opacity-100 hover:bg-white/20"
+                              : "opacity-0 group-hover:opacity-100"
+                          }`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteFile.mutate({ id: projectId, fileId: file.id });
+                            setDeleteFileId(file.id);
                           }}
                           data-testid={`button-delete-file-${file.id}`}
                         >
-                          <Trash2 className="h-3 w-3 text-destructive" />
+                          <Trash2 className={`h-3 w-3 ${selectedFileId === file.id ? "text-primary-foreground" : "text-destructive"}`} />
                         </Button>
                       </div>
                     ))}
@@ -830,6 +847,33 @@ export default function Editor() {
         toast({ title: "Imagem inserida!", description: "URL adicionada ao final do arquivo." });
       }}
     />
+
+    <AlertDialog open={deleteFileId !== null} onOpenChange={(open) => !open && setDeleteFileId(null)}>
+      <AlertDialogContent className="glass-card border-0" style={{ borderRadius: '2rem' }}>
+        <AlertDialogHeader>
+          <AlertDialogTitle style={{ fontFamily: 'var(--app-font-serif)' }}>Excluir arquivo?</AlertDialogTitle>
+          <AlertDialogDescription>
+            O arquivo <strong>{files?.find((f) => f.id === deleteFileId)?.name}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="btn-glass border-0">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (deleteFileId) {
+                if (selectedFileId === deleteFileId) setSelectedFileId(null);
+                deleteFile.mutate({ id: projectId, fileId: deleteFileId });
+                setDeleteFileId(null);
+              }
+            }}
+            className="btn-primary border-0"
+            style={{ background: 'hsl(var(--destructive))', boxShadow: 'none' }}
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }

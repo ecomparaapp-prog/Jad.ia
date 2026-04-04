@@ -276,18 +276,20 @@ export default function Dashboard() {
                               {formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true, locale: ptBR })}
                             </span>
                             <button
-                              className="btn-icon h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="btn-icon h-8 w-8 transition-opacity opacity-50 hover:opacity-100"
                               onClick={(e) => { e.stopPropagation(); setLocation(`/projetos/${project.id}`); }}
                               data-testid={`button-edit-project-${project.id}`}
+                              title="Editar projeto"
                             >
                               <Edit3 className="h-3.5 w-3.5" strokeWidth={1.5} />
                             </button>
                             <button
-                              className="btn-icon h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                              className="btn-icon h-8 w-8 transition-opacity opacity-50 hover:opacity-100 text-destructive"
                               onClick={(e) => { e.stopPropagation(); setDeleteId(project.id); }}
                               data-testid={`button-delete-project-${project.id}`}
+                              title="Excluir projeto"
                             >
-                              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" strokeWidth={1.5} />
                             </button>
                           </div>
                         </div>
