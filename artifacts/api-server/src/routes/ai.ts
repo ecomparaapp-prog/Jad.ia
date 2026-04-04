@@ -158,6 +158,37 @@ async function callGroqText(messages: OpenAIMessage[], model = "llama-3.3-70b-ve
   return data.choices[0]?.message?.content ?? "";
 }
 
+async function callGeminiVision(base64Image: string, mimeType: string, prompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+
+  const body = {
+    contents: [{
+      role: "user",
+      parts: [
+        { inline_data: { mime_type: mimeType, data: base64Image } },
+        { text: prompt },
+      ],
+    }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
+  };
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini Vision API error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json() as {
+    candidates?: Array<{ content: { parts: Array<{ text: string }> } }>;
+  };
+  return data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ?? "";
+}
+
 function extractCodeBlocks(text: string): string[] {
   const regex = /```(?:\w+)?\n([\s\S]*?)```/g;
   const blocks: string[] = [];
@@ -461,6 +492,103 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
     logger.error({ error }, "Erro no streaming SSE");
     sendEvent("error", { message: "Erro ao processar streaming" });
     res.end();
+  }
+});
+
+router.post("/ai/process-sketch", requireAuth, async (req, res): Promise<void> => {
+  const { imageBase64, mimeType } = req.body as { imageBase64?: string; mimeType?: string };
+
+  if (!imageBase64 || !mimeType) {
+    res.status(400).json({ error: "imageBase64 e mimeType são obrigatórios" });
+    return;
+  }
+
+  const validMimeTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (!validMimeTypes.includes(mimeType)) {
+    res.status(400).json({ error: "Tipo de imagem inválido. Use JPEG, PNG, GIF ou WebP." });
+    return;
+  }
+
+  const visionPrompt = `Você é um Engenheiro de UI especializado em Visão Computacional. Analise a imagem fornecida (rascunho/screenshot) e identifique:
+1. Estrutura de layout (colunas, grid, flexbox, sidebar, etc.)
+2. Componentes identificados (botões, inputs, cards, headers, navbars, tabelas, modais, etc.)
+3. Hierarquia de texto (títulos h1/h2/h3, parágrafos, labels)
+4. Paleta de cores sugerida (em formato hex)
+5. Tipo de projeto (landing page, dashboard, app, e-commerce, etc.)
+
+Responda exclusivamente com um JSON técnico descrevendo essa estrutura, incluindo as classes Tailwind CSS correspondentes. Formato:
+{
+  "layoutType": "...",
+  "projectType": "...",
+  "colorPalette": { "primary": "#...", "background": "#...", "text": "#..." },
+  "components": [{ "type": "...", "description": "...", "tailwindClasses": "..." }],
+  "hierarchy": { "h1": "...", "h2": "...", "body": "..." },
+  "promptSuggestion": "Texto conciso descrevendo o projeto para usar como prompt de criação"
+}`;
+
+  try {
+    const raw = await callGeminiVision(imageBase64, mimeType, visionPrompt);
+    let analysis: Record<string, unknown>;
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { promptSuggestion: raw };
+    } catch {
+      analysis = { promptSuggestion: raw };
+    }
+    logger.info("Sketch processado com Gemini Vision");
+    res.json({ analysis, raw });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, "Erro ao processar sketch");
+    res.status(500).json({ error: `Erro ao processar imagem: ${msg}` });
+  }
+});
+
+router.post("/ai/optimize-code", requireAuth, async (req, res): Promise<void> => {
+  const { content, language, projectContext } = req.body as {
+    content?: string;
+    language?: string;
+    projectContext?: string;
+  };
+
+  if (!content || !content.trim()) {
+    res.status(400).json({ error: "content é obrigatório" });
+    return;
+  }
+
+  if (content.length > 80000) {
+    res.status(400).json({ error: "Arquivo muito grande para otimização (máximo 80KB)" });
+    return;
+  }
+
+  const messages: OpenAIMessage[] = [
+    {
+      role: "system",
+      content: `Você é o Otimizador Silencioso da Jad.ia. Refatore o código para padrões profissionais sem alterar a funcionalidade visual ou lógica.
+
+Aplique APENAS estas otimizações necessárias:
+1. HTML SEMÂNTICO: Substitua <div> excessivos por <main>, <section>, <article>, <nav>, <footer>, <header>, <aside> quando apropriado
+2. ACESSIBILIDADE (a11y): Adicione aria-label em elementos interativos sem texto visível, atributo alt em <img> sem alt, role quando necessário
+3. SEO: Se for um arquivo HTML principal (index.html), adicione/melhore <title>, meta description e meta og:title, og:description relevantes ao conteúdo
+4. PERFORMANCE: Adicione loading="lazy" em imagens fora da dobra inicial, remova estilos inline redundantes quando Tailwind já resolve
+${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
+
+REGRA CRÍTICA: Retorne APENAS o código otimizado, sem explicações, comentários ou markdown. Preserve 100% da lógica, estilos e conteúdo original.`,
+    },
+    {
+      role: "user",
+      content: `Otimize este código ${language ?? "HTML"}:\n\n${content}`,
+    },
+  ];
+
+  try {
+    const optimized = await callGroqText(messages, GROQ_FALLBACK_MODEL);
+    const codeMatch = optimized.match(/```[\w]*\n([\s\S]*?)```/);
+    const cleanCode = codeMatch ? codeMatch[1].trim() : optimized.trim();
+    res.json({ optimized: cleanCode });
+  } catch (err: unknown) {
+    logger.error({ err }, "Erro no otimizador silencioso");
+    res.status(500).json({ error: "Erro ao otimizar código" });
   }
 });
 

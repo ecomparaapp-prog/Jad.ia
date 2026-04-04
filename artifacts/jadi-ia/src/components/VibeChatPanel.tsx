@@ -22,6 +22,7 @@ import {
   Sparkles,
   Zap,
   Send,
+  Camera,
 } from "lucide-react";
 
 interface Attachment {
@@ -321,6 +322,9 @@ export default function VibeChatPanel({
   const [assetLog, setAssetLog] = useState<AssetLogEntry[]>([]);
   const [isFetchingAssets, setIsFetchingAssets] = useState(false);
 
+  const [isScanning, setIsScanning] = useState(false);
+  const [isSilentOptimizing, setIsSilentOptimizing] = useState(false);
+
   const analyzeTextareaRef = useRef<HTMLTextAreaElement>(null);
   const vibeTextareaRef = useRef<HTMLTextAreaElement>(null);
   const analyzeScrollRef = useRef<HTMLDivElement>(null);
@@ -329,6 +333,7 @@ export default function VibeChatPanel({
   const statusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastParentMessagesRef = useRef<ChatMessage[]>(initialMessages);
   const processedFilesRef = useRef<Set<string>>(new Set());
+  const sketchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (prefillInput && prefillInput.trim()) {
@@ -396,6 +401,72 @@ export default function VibeChatPanel({
     setAttachments((prev) => [...prev, { ...att, id: Math.random().toString(36).slice(2) }]);
   }, []);
 
+  const scanSketch = useCallback(async (file: File) => {
+    setIsScanning(true);
+    const authToken = localStorage.getItem("token");
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve((e.target?.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/ai/process-sketch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken ?? ""}` },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+      });
+
+      if (!res.ok) throw new Error("Erro ao processar imagem");
+
+      const { analysis } = await res.json() as { analysis: Record<string, unknown>; raw: string };
+      const suggestion = (analysis.promptSuggestion as string) || "Crie a interface baseada na análise do rascunho escaneado";
+
+      setAnalysisContext((prev) =>
+        prev
+          ? `${prev}\n\n[ANÁLISE DE RASCUNHO - Vision-to-Vibe]\n${JSON.stringify(analysis, null, 2)}`
+          : `[ANÁLISE DE RASCUNHO - Vision-to-Vibe]\n${JSON.stringify(analysis, null, 2)}`,
+      );
+      setAnalyzeInput(suggestion);
+      setTimeout(() => analyzeTextareaRef.current?.focus(), 100);
+    } catch (err) {
+      console.error("Erro ao escanear rascunho:", err);
+    } finally {
+      setIsScanning(false);
+    }
+  }, []);
+
+  const runSilentOptimizer = useCallback(async (filename: string, content: string) => {
+    if (!onFileWrite) return;
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (!["html", "htm"].includes(ext ?? "")) return;
+    if (content.length < 200) return;
+
+    const authToken = localStorage.getItem("token");
+    setIsSilentOptimizing(true);
+    try {
+      const res = await fetch("/api/ai/optimize-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken ?? ""}` },
+        body: JSON.stringify({
+          content,
+          language: "HTML",
+          projectContext: stackDecision?.systemPrompt?.slice(0, 300),
+        }),
+      });
+      if (!res.ok) return;
+      const { optimized } = await res.json() as { optimized: string };
+      if (optimized && optimized.length > 100) {
+        onFileWrite(filename, optimized);
+      }
+    } catch {
+      // otimizador é best-effort, falha silenciosamente
+    } finally {
+      setIsSilentOptimizing(false);
+    }
+  }, [onFileWrite, stackDecision]);
+
   const handlePaste = useCallback((e: ClipboardEvent<HTMLTextAreaElement>) => {
     const items = Array.from(e.clipboardData.items);
     const imageItem = items.find((i) => i.type.startsWith("image/"));
@@ -449,7 +520,9 @@ export default function VibeChatPanel({
       if (!processedFilesRef.current.has(filename)) {
         processedFilesRef.current.add(filename);
         newlyCompleted.push(filename);
-        onFileWrite(filename, stripCodeFences(content));
+        const cleanContent = stripCodeFences(content);
+        onFileWrite(filename, cleanContent);
+        void runSilentOptimizer(filename, cleanContent);
       }
     }
     if (newlyCompleted.length > 0) {
@@ -838,6 +911,29 @@ export default function VibeChatPanel({
 
         {/* Analysis Input */}
         <div className="p-2 flex-shrink-0 border-t" style={{ borderColor: "#bbf7d0", background: "white" }}>
+          <input
+            ref={sketchInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void scanSketch(file);
+              e.target.value = "";
+            }}
+          />
+          <button
+            onClick={() => sketchInputRef.current?.click()}
+            disabled={isScanning || isStreaming}
+            className="w-full h-7 mb-1.5 rounded-lg flex items-center justify-center gap-1.5 text-[10px] font-mono font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed border"
+            style={{ borderColor: isScanning ? "#86efac" : "#bbf7d0", background: isScanning ? "#dcfce7" : "#f0fdf4", color: isScanning ? "#16a34a" : "#4ade80" }}
+          >
+            {isScanning ? (
+              <><Loader2 className="h-3 w-3 animate-spin text-green-600" /><span className="text-green-700">Escaneando rascunho...</span></>
+            ) : (
+              <><Camera className="h-3 w-3" />Escanear Rascunho</>
+            )}
+          </button>
           {showAnalyzeCommands && (
             <div className="mb-1.5 rounded-xl border overflow-hidden" style={{ borderColor: "#bbf7d0", background: "white" }}>
               {QUICK_COMMANDS.filter((c) => c.cmd.startsWith(analyzeInput.toLowerCase())).map((c) => (
@@ -1020,6 +1116,13 @@ export default function VibeChatPanel({
           <div className="mx-2 mb-2 px-3 py-2 rounded-xl flex items-center gap-2" style={{ border: "1px solid rgba(255,107,53,0.2)", background: "rgba(255,107,53,0.07)" }}>
             <Loader2 className="h-3 w-3 animate-spin" style={{ color: "#FF6B35" }} />
             <span className="text-[10px] font-mono" style={{ color: "#FF6B35" }}>Buscando assets...</span>
+          </div>
+        )}
+
+        {isSilentOptimizing && (
+          <div className="mx-2 mb-2 px-3 py-2 rounded-xl flex items-center gap-2" style={{ border: "1px solid rgba(139,92,246,0.2)", background: "rgba(139,92,246,0.06)" }}>
+            <Zap className="h-3 w-3" style={{ color: "#8b5cf6", animation: "pulse 1.5s infinite" }} />
+            <span className="text-[10px] font-mono" style={{ color: "rgba(139,92,246,0.9)" }}>Jad.ia está otimizando o código para você</span>
           </div>
         )}
 

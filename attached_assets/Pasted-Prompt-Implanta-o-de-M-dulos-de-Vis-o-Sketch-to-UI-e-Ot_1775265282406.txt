@@ -1,0 +1,55 @@
+Prompt: Implantação de Módulos de Visão (Sketch-to-UI) e Otimização (SEO/Perf)
+"Implemente dois módulos avançados de inteligência na engine da Jad.ia: o módulo 'Vision-to-Vibe' (Sketch-to-UI) e o agente 'Otimizador Silencioso' (Performance & SEO). Siga as instruções técnicas abaixo:
+
+🎨 Módulo 1: Vision-to-Vibe (Sketch-to-UI)
+Objetivo: Permitir que o usuário faça upload de um rascunho ou screenshot e a IA gere a estrutura inicial do código.
+
+1. Integração Multimodal (Backend):
+
+Configure uma rota de API (/api/v1/process-sketch). Ela deve aceitar uploads de imagens (base64 ou multipart).
+
+Utilize o SDK do Gemini 1.5 Flash (via GEMINI_API_KEY nos Secrets). Envie a imagem junto com o seguinte system prompt restrito:
+
+"Você é um Engenheiro de UI especializado em Visão Computacional. Analise a imagem fornecida (rascunho/screenshot) e identifique a estrutura de layout, componentes (botões, inputs, cards), hierarquia de texto e a paleta de cores sugerida. Responda exclusivamente com um JSON técnico descrevendo essa estrutura e as classes Tailwind CSS correspondentes para a montagem inicial."
+
+2. Interface de Upload (Frontend da Jad.ia):
+
+Adicione um botão de [📷 Escanear Rascunho] na área de prompt.
+
+Ao fazer o upload, exiba um loader e envie a imagem para a rota criada.
+
+A resposta JSON técnica do Gemini deve ser injetada automaticamente como contexto inicial para o Agente Analista, para que ele instrua o Construtor a iniciar o projeto com base no desenho.
+
+⚡ Módulo 2: O Agente Otimizador Silencioso
+Objetivo: Refatorar automaticamente o código gerado para garantir alta performance, acessibilidade e SEO, sem intervenção do usuário.
+
+1. Orquestração do Fluxo (Workflow):
+
+Modifique o ciclo de geração de código. Após o Agente Construtor finalizar a escrita dos arquivos e antes de atualizar o Preview final, acione o Otimizador Silencioso via Webhooks internos.
+
+2. Regras de Otimização (AI Prompt):
+
+Utilize um modelo secundário mais rápido (ex: Llama 3 via Groq) para este agente. O prompt dele deve focar em uma checklist estrita:
+
+HTML Semântico: Substituir <div> excessivos por tags apropriadas (<main>, <section>, <article>, <nav>, <footer>).
+
+Acessibilidade (a11y): Garantir atributos aria-label, roles, contraste de cor básico e atributo alt para imagens.
+
+SEO: Gerar automaticamente meta-tags essenciais (title, description, Open Graph) com base no contexto do projeto.
+
+Performance: Garantir o uso de classes Tailwind otimizadas, evitar repetições de código e aplicar loading='lazy' em imagens fora da dobra inicial.
+
+3. Execução Silenciosa:
+
+Este agente deve salvar as alterações diretamente nos arquivos do projeto no Replit.
+
+Na UI da Jad.ia, mostre apenas um pequeno indicador visual discreto (ex: um ícone de raio piscando suavemente) com a legenda: "Jad.ia está otimizando o código para você". Não mostre o log técnico de otimização no chat principal para não poluir a conversa."
+
+O que este prompt vai construir na Jad.ia:
+Backend: Endpoints para processar imagens com a visão multimodal do Gemini.
+
+Frontend: Botão de upload de rascunho na interface de chat.
+
+Lógica de IA: Novo fluxo de contexto: Imagem > JSON Estrutural > Prompt Analista > Código Construtor.
+
+Automação: Um novo agente de IA que roda em segundo plano, refatorando o código para padrões profissionais de mercado (SEO/Acessibilidade) antes que o usuário veja o resultado final no Preview.
