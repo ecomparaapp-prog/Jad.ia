@@ -130,6 +130,12 @@ Quando solicitado a criar um sistema, app ou projeto completo, siga SEMPRE este 
 [conteúdo completo e funcional do arquivo aqui]
 ===END_FILE===
 
+ATENÇÃO CRÍTICA — FORMATO OBRIGATÓRIO:
+- NÃO use blocos markdown (\`\`\`html, \`\`\`css, etc.) para envolver os arquivos
+- Use APENAS os marcadores ===FILE: === e ===END_FILE=== para cada arquivo
+- O conteúdo do arquivo vai diretamente entre os marcadores, SEM delimitadores adicionais
+- Se usar ===FILE:===, NUNCA omita o ===END_FILE=== correspondente
+
 REGRAS OBRIGATÓRIAS DE CÓDIGO:
 - Sempre crie um index.html como arquivo principal de entrada
 - Cada arquivo deve ser completo, funcional e bem estruturado
@@ -155,6 +161,65 @@ function extractAllCodeBlocks(text: string): Array<{ code: string; lang: string 
     blocks.push({ lang: match[1] || "", code: match[2].trim() });
   }
   return blocks;
+}
+
+function extractFilesFromCodeBlocks(text: string): Map<string, string> {
+  const result = new Map<string, string>();
+  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+  let match;
+  let htmlCount = 0;
+  let cssCount = 0;
+  let jsCount = 0;
+
+  const fileListMatch = /[Aa]rquivos?:?\s*([^\n]+)/.exec(text);
+  const expectedFiles = fileListMatch
+    ? fileListMatch[1].split(/[,\s]+/).map((f) => f.trim()).filter((f) => f.includes("."))
+    : [];
+  let fileIndex = 0;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const lang = (match[1] ?? "").toLowerCase();
+    const content = match[2].trim();
+    if (!content || content.length < 10) continue;
+
+    let filename: string | null = null;
+    const firstLine = content.split("\n")[0] ?? "";
+
+    const cssComment = /^\/\*\s*([\w./\-]+\.\w+)\s*\*\//.exec(firstLine);
+    if (cssComment) filename = cssComment[1];
+
+    const jsComment = /^\/\/\s*([\w./\-]+\.\w+)/.exec(firstLine);
+    if (!filename && jsComment) filename = jsComment[1];
+
+    const htmlComment = /^<!--\s*([\w./\-]+\.\w+)\s*-->/.exec(firstLine);
+    if (!filename && htmlComment) filename = htmlComment[1];
+
+    if (!filename && fileIndex < expectedFiles.length) {
+      filename = expectedFiles[fileIndex] ?? null;
+    }
+
+    if (!filename) {
+      if (lang === "html" || content.includes("<!DOCTYPE") || content.includes("<html")) {
+        filename = htmlCount === 0 ? "index.html" : `page${htmlCount}.html`;
+        htmlCount++;
+      } else if (lang === "css") {
+        filename = cssCount === 0 ? "styles.css" : `styles${cssCount}.css`;
+        cssCount++;
+      } else if (lang === "js" || lang === "javascript") {
+        filename = jsCount === 0 ? "app.js" : `app${jsCount}.js`;
+        jsCount++;
+      } else if (lang === "ts" || lang === "typescript") {
+        filename = "app.ts";
+      }
+    }
+
+    if (filename && !result.has(filename)) {
+      result.set(filename, content);
+      fileIndex++;
+    }
+  }
+
+  return result;
 }
 
 function formatMessage(content: string): { parts: Array<{ type: "text" | "code"; content: string; lang?: string }> } {
@@ -699,10 +764,12 @@ export default function VibeChatPanel({
                 });
                 if (!isAnalysisMode) {
                   processVibeStream(accumulated);
-                  const codeBlocks = extractAllCodeBlocks(accumulated);
-                  if (codeBlocks.length > 0) {
-                    const lastBlock = codeBlocks[codeBlocks.length - 1];
-                    onLiveCodeUpdate(lastBlock.code, lastBlock.lang);
+                  if (!vibeMode) {
+                    const codeBlocks = extractAllCodeBlocks(accumulated);
+                    if (codeBlocks.length > 0) {
+                      const lastBlock = codeBlocks[codeBlocks.length - 1];
+                      onLiveCodeUpdate(lastBlock.code, lastBlock.lang);
+                    }
                   }
                 }
               } else if (currentEvent === "provider_switch") {
@@ -734,6 +801,25 @@ export default function VibeChatPanel({
         }
         return copy;
       });
+
+      if (vibeMode && onFileWrite && processedFilesRef.current.size === 0 && accumulated.length > 50) {
+        const fallbackFiles = extractFilesFromCodeBlocks(accumulated);
+        if (fallbackFiles.size > 0) {
+          for (const [filename, content] of fallbackFiles) {
+            if (!processedFilesRef.current.has(filename)) {
+              processedFilesRef.current.add(filename);
+              setVibeFiles((prev) => {
+                if (prev.some((f) => f.name === filename)) return prev;
+                return [...prev, { name: filename, status: "done" }];
+              });
+              onFileWrite(filename, content);
+              if (["html", "htm"].includes(filename.split(".").pop()?.toLowerCase() ?? "")) {
+                void runSilentOptimizer(filename, content);
+              }
+            }
+          }
+        }
+      }
     } catch (err: unknown) {
       if ((err as Error)?.name === "AbortError") return;
       const errorMsg = (err instanceof Error && err.message && !err.message.startsWith("Stream failed"))

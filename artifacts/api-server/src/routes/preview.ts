@@ -196,6 +196,16 @@ function frameworkPreviewHtml(framework: string, files: ProjectFile[]): string {
 </html>`;
 }
 
+function sniffFileType(file: ProjectFile): "html" | "css" | "js" | "other" {
+  const c = file.content.trim();
+  if (c.startsWith("<!DOCTYPE") || c.startsWith("<html") || c.includes("<body") || c.includes("<head>")) return "html";
+  if (c.startsWith("/*") || c.startsWith("@media") || c.startsWith("@charset") || c.startsWith(":root") || /^[a-z*\.\#\[]/i.test(c)) {
+    if (c.includes("{") && c.includes("}") && !c.includes("function")) return "css";
+  }
+  if (c.startsWith("function") || c.startsWith("const ") || c.startsWith("var ") || c.startsWith("let ") || c.startsWith("import ") || c.startsWith("//") || c.startsWith("/*")) return "js";
+  return "other";
+}
+
 function buildPreviewHtml(files: ProjectFile[]): string {
   if (files.length === 0) {
     return `<!DOCTYPE html><html><head><meta charset="utf-8">${CONSOLE_CAPTURE_SCRIPT}</head><body style="margin:0;background:#080810;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace"><p style="color:#475569;font-size:13px">Nenhum arquivo no projeto.</p></body></html>`;
@@ -206,9 +216,20 @@ function buildPreviewHtml(files: ProjectFile[]): string {
     return frameworkPreviewHtml(framework, files);
   }
 
+  const normalizedFiles: ProjectFile[] = files.map((f) => {
+    const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+    if (["txt", "text"].includes(ext) && f.content.trim().length > 20) {
+      const sniffed = sniffFileType(f);
+      if (sniffed === "html") return { ...f, name: f.name.replace(/\.(txt|text)$/, ".html") };
+      if (sniffed === "css") return { ...f, name: f.name.replace(/\.(txt|text)$/, ".css") };
+      if (sniffed === "js") return { ...f, name: f.name.replace(/\.(txt|text)$/, ".js") };
+    }
+    return f;
+  });
+
   const htmlFile =
-    files.find((f) => f.name === "index.html") ??
-    files.find((f) => f.name.endsWith(".html") || f.name.endsWith(".htm"));
+    normalizedFiles.find((f) => f.name === "index.html") ??
+    normalizedFiles.find((f) => f.name.endsWith(".html") || f.name.endsWith(".htm"));
 
   const cssFiles = files.filter((f) => f.name.endsWith(".css"));
   const jsFiles = files.filter(
