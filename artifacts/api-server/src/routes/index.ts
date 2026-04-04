@@ -12,6 +12,7 @@ import contextRouter from "./context";
 import imagesRouter from "./images";
 import githubRouter from "./github";
 import oauthRouter from "./oauth";
+import mobileRouter from "./mobile";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(assetsRouter);
 router.use(contextRouter);
 router.use(imagesRouter);
 router.use(githubRouter);
+router.use(mobileRouter);
 
 export default router;

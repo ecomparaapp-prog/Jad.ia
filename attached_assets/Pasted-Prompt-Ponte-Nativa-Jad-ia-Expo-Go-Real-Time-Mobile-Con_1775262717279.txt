@@ -1,0 +1,48 @@
+Prompt: Ponte Nativa Jad.ia + Expo Go (Real-Time Mobile)
+"Configure a infraestrutura de Live Mobile Preview na Jad.ia utilizando o Expo SDK. O objetivo é permitir que o código gerado pelo Construtor seja refletido instantaneamente no app Expo Go do usuário.
+
+1. Instalação e Ambiente:
+
+Configure o ambiente para suportar React Native instalando as dependências: npx expo install expo react-native react-native-web @expo/metro-runtime.
+
+Adicione o pacote qrcode.react ao frontend da Jad.ia para gerar o código de pareamento.
+
+2. Túnel de Conexão (Obrigatório):
+
+Configure o comando de execução no package.json como: "mobile-dev": "npx expo start --tunnel".
+
+Nota Técnica: O parâmetro --tunnel é essencial para que o servidor do Replit (na nuvem) consiga se comunicar com o smartphone do usuário através da internet.
+
+3. Captura do QR Code e URL:
+
+Implemente um script de backend que 'escute' a saída do terminal do Expo.
+
+Extraia a URL de conexão (ex: exp://u.expo.dev/...) e envie-a para o frontend da Jad.ia em tempo real via WebSockets ou uma API interna.
+
+4. Interface 'Mobile Bridge' na Jad.ia:
+
+Crie um painel lateral chamado 'Conexão Mobile'.
+
+Exiba um QR Code dinâmico que aponte para a URL do túnel gerada pelo Expo.
+
+Adicione um indicador de status: 'Aguardando Conexão', 'Sincronizando' ou 'Live'.
+
+5. Sincronização de Código (Fast Refresh):
+
+Force o Agente Construtor a salvar as alterações diretamente no arquivo App.js ou em componentes dentro de /src.
+
+Garanta que o Metro Bundler do Expo esteja rodando em modo 'Watch'. Assim que a Jad.ia terminar de gerar um botão ou tela, o app no celular deve atualizar sem necessidade de recarregar manualmente.
+
+6. Regras do Construtor:
+
+Quando o 'Modo Mobile' estiver ativo, o Construtor deve substituir automaticamente elementos HTML (div, span) por componentes nativos (View, Text) e utilizar NativeWind ou StyleSheet para a estilização."
+
+🛠️ Por que este prompt funciona?
+Acessibilidade: O usuário não precisa configurar nada no computador. Ele apenas abre a Jad.ia, aponta o celular para o QR Code e vê o app "ganhar vida".
+
+Velocidade: Com o Fast Refresh do Expo, a experiência de "Vibe Coding" se torna tátil. O usuário vê o código sendo escrito e o app mudando na palma da mão quase simultaneamente.
+
+Escalabilidade: Como você está usando o --tunnel, não importa se o usuário está no Wi-Fi, 4G ou 5G; a conexão será estabelecida.
+
+Dica para a Experiência do Usuário (UX):
+Peça ao Replit Agent para adicionar um botão de "Limpar Cache do Expo" na interface da Jad.ia. Às vezes, o Metro Bundler pode travar se o código gerado for muito complexo, e um botão de reset ajuda a manter o fluxo de criação sem frustrações.

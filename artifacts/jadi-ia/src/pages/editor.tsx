@@ -53,6 +53,7 @@ import {
   EyeOff,
   Layers,
   ImageIcon,
+  Smartphone,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -61,6 +62,7 @@ import PreviewPanel from "@/components/PreviewPanel";
 import GeneratePromptModal from "@/components/GeneratePromptModal";
 import ImagePickerModal from "@/components/ImagePickerModal";
 import GitHubPanel from "@/components/GitHubPanel";
+import MobilePanel from "@/components/MobilePanel";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -545,6 +547,9 @@ export default function Editor() {
               <TabsTrigger value="git" className="text-xs flex-1 rounded-none" data-testid="tab-git">
                 <GitBranch className="h-3.5 w-3.5" />
               </TabsTrigger>
+              <TabsTrigger value="mobile" className="text-xs flex-1 rounded-none" data-testid="tab-mobile">
+                <Smartphone className="h-3.5 w-3.5" />
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="code" className="flex-1 flex flex-col overflow-hidden m-0 p-0">
@@ -706,6 +711,10 @@ export default function Editor() {
                   projectName={project.name}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="mobile" className="flex-1 overflow-auto m-0">
+              <MobilePanel projectId={projectId} />
             </TabsContent>
           </Tabs>
         </Panel>
