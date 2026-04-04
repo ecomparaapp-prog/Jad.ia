@@ -7,8 +7,74 @@ const router: IRouter = Router();
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GEMINI_MODEL = "gemini-2.5-flash";
-const GROQ_CODER_MODEL = "qwen-2.5-coder-32b";
-const GROQ_FALLBACK_MODEL = "llama-3.3-70b-versatile";
+const GROQ_CODER_MODEL = "llama-3.3-70b-versatile";
+const GROQ_FALLBACK_MODEL = "llama-3.1-8b-instant";
+
+const FONT_PAIRS_LOCAL: Record<string, { heading: string; body: string; weights: string }> = {
+  modern: { heading: "Inter", body: "Inter", weights: "400;500;600;700" },
+  editorial: { heading: "Playfair+Display", body: "Source+Sans+3", weights: "400;600;700" },
+  tech: { heading: "Space+Grotesk", body: "JetBrains+Mono", weights: "400;500;700" },
+  elegant: { heading: "Cormorant+Garamond", body: "Lato", weights: "300;400;700" },
+  bold: { heading: "Montserrat", body: "Open+Sans", weights: "400;600;800" },
+  minimal: { heading: "DM+Sans", body: "DM+Sans", weights: "300;400;500;700" },
+  creative: { heading: "Syne", body: "Nunito", weights: "400;600;700;800" },
+  corporate: { heading: "Roboto", body: "Roboto", weights: "300;400;500;700" },
+};
+
+function detectFontMood(description: string): string {
+  const d = description.toLowerCase();
+  if (/tech|startup|saas|app|software|dev|código|code|digital/.test(d)) return "tech";
+  if (/luxo|luxury|premium|elegant|fashion|moda|beleza|beauty|spa/.test(d)) return "elegant";
+  if (/blog|editorial|artigo|notícia|revista|magazine|jornal/.test(d)) return "editorial";
+  if (/bold|imapct|esport|sport|energia|energy|academia|fitness/.test(d)) return "bold";
+  if (/minimal|clean|simples|simple|branco|white|zen/.test(d)) return "minimal";
+  if (/arte|art|design|criativ|agência|agency|portfolio|estúdio/.test(d)) return "creative";
+  if (/empresa|corporat|b2b|negócio|business|consult|financ|banco/.test(d)) return "corporate";
+  return "modern";
+}
+
+function extractImageQueries(description: string): string[] {
+  const words = description.toLowerCase();
+  const queries: string[] = [];
+  if (/clínica|clinic|médico|medical|saúde|health|fisio/.test(words)) queries.push("modern clinic interior", "healthcare professional");
+  else if (/restaurante|restaurant|food|comida|gastro/.test(words)) queries.push("restaurant interior", "food photography");
+  else if (/tech|software|startup|app/.test(words)) queries.push("technology office", "modern workspace");
+  else if (/moda|fashion|roupas|clothes/.test(words)) queries.push("fashion editorial", "modern clothing store");
+  else if (/academia|fitness|sport|esporte/.test(words)) queries.push("gym workout", "fitness lifestyle");
+  else if (/imóvel|imobiliária|real estate|apartamento/.test(words)) queries.push("modern apartment interior", "real estate architecture");
+  else if (/viagem|travel|turismo|tourism/.test(words)) queries.push("travel destination", "adventure landscape");
+  else queries.push("modern business", "professional workspace");
+  return queries.slice(0, 3);
+}
+
+async function fetchImagesLocal(query: string, count = 3): Promise<string[]> {
+  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (unsplashKey) {
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${count}&orientation=landscape`,
+        { headers: { Authorization: `Client-ID ${unsplashKey}` } },
+      );
+      if (res.ok) {
+        const data = await res.json() as { results?: Array<{ urls?: { regular?: string } }> };
+        const urls = (data.results ?? []).map((r) => r.urls?.regular).filter((u): u is string => !!u);
+        if (urls.length > 0) return urls;
+      }
+    } catch { /* fallback to pixabay */ }
+  }
+  const pixabayKey = process.env.PIXABAY_API_KEY;
+  if (pixabayKey) {
+    try {
+      const url = `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=${count}&safesearch=true`;
+      const res = await fetch(url, { headers: { "Referer": "https://pixabay.com" } });
+      if (res.ok) {
+        const data = await res.json() as { hits?: Array<{ webformatURL?: string }> };
+        return (data.hits ?? []).map((h) => h.webformatURL).filter((u): u is string => !!u);
+      }
+    } catch { /* no images */ }
+  }
+  return [];
+}
 
 type OpenAIMessage = { role: string; content: string | unknown[] };
 
@@ -417,8 +483,18 @@ PADRÕES OBRIGATÓRIOS DE TECNOLOGIA:
 ${projectContext ? `Contexto do projeto: ${projectContext}` : ""}
 ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}` : ""}`;
 
-  const systemContent = systemPrompt ? `${baseSystem}\n\n${systemPrompt}` : baseSystem;
-  const fullMessages: OpenAIMessage[] = [{ role: "system", content: systemContent }, ...messages];
+  // Truncate systemPrompt to avoid 413 (payload too large)
+  const MAX_SYSTEM_EXTRA = 4000;
+  const safeSystemPrompt = systemPrompt && systemPrompt.length > MAX_SYSTEM_EXTRA
+    ? systemPrompt.slice(0, MAX_SYSTEM_EXTRA)
+    : systemPrompt;
+
+  const systemContent = safeSystemPrompt ? `${baseSystem}\n\n${safeSystemPrompt}` : baseSystem;
+
+  // Keep only last 8 messages to avoid 413 errors
+  const MAX_MESSAGES = 8;
+  const truncatedMessages = messages.slice(-MAX_MESSAGES);
+  const fullMessages: OpenAIMessage[] = [{ role: "system", content: systemContent }, ...truncatedMessages];
 
   try {
     if (isAnalyst) {
@@ -436,7 +512,7 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
     try {
       groqRes = await callGroq(fullMessages, groqModel, true);
       if (!groqRes.ok && groqModel === GROQ_CODER_MODEL) {
-        logger.warn(`Qwen indisponível (${groqRes.status}), tentando llama fallback...`);
+        logger.warn(`Modelo primário indisponível (${groqRes.status}), tentando fallback...`);
         groqRes = await callGroq(fullMessages, GROQ_FALLBACK_MODEL, true);
       }
     } catch (err: unknown) {
@@ -445,12 +521,28 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
     }
 
     if (!groqRes || !groqRes.ok) {
-      logger.warn(`Groq indisponível (status: ${groqRes?.status ?? "erro de rede"}), alternando para Gemini...`);
+      const groqStatus = groqRes?.status ?? "erro de rede";
+      logger.warn(`Groq indisponível (status: ${groqStatus}), alternando para Gemini...`);
       sendEvent("provider_switch", { message: "Alternando para Gemini..." });
-      await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
-      sendEvent("done", {});
-      res.end();
-      return;
+
+      // Add 1s delay if previous request just failed (rate limit cooldown)
+      await new Promise((r) => setTimeout(r, 1000));
+
+      try {
+        await streamGemini(fullMessages, (token) => sendEvent("token", { token }));
+        sendEvent("done", {});
+        res.end();
+        return;
+      } catch (geminiErr: unknown) {
+        const geminiStatus = (geminiErr as { status?: number })?.status;
+        if (geminiStatus === 429) {
+          sendEvent("error", { message: "Servidores de IA sobrecarregados. Aguarde alguns segundos e tente novamente." });
+        } else {
+          sendEvent("error", { message: "Erro ao processar resposta. Tente novamente." });
+        }
+        res.end();
+        return;
+      }
     }
 
     const reader = groqRes.body!.getReader();
@@ -493,6 +585,38 @@ ${language && language !== "auto" ? `Linguagem principal do projeto: ${language}
     sendEvent("error", { message: "Erro ao processar streaming" });
     res.end();
   }
+});
+
+router.post("/ai/resolve-assets", requireAuth, async (req, res): Promise<void> => {
+  const { projectDescription = "" } = req.body as { projectDescription?: string };
+
+  const mood = detectFontMood(projectDescription);
+  const fontPair = FONT_PAIRS_LOCAL[mood] ?? FONT_PAIRS_LOCAL.modern;
+  const families = fontPair.heading === fontPair.body
+    ? `family=${fontPair.heading}:wght@${fontPair.weights}`
+    : `family=${fontPair.heading}:wght@${fontPair.weights}&family=${fontPair.body}:wght@${fontPair.weights}`;
+  const googleFontsUrl = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+
+  const imageQueries = extractImageQueries(projectDescription);
+  const imageResults: Record<string, string[]> = {};
+  await Promise.all(
+    imageQueries.map(async (query) => {
+      imageResults[query] = await fetchImagesLocal(query, 3);
+    }),
+  );
+
+  logger.info({ mood, imageQueries }, "Assets resolvidos via AI");
+  res.json({
+    fonts: {
+      heading: fontPair.heading.replace(/\+/g, " "),
+      body: fontPair.body.replace(/\+/g, " "),
+      googleFontsUrl,
+      cssVars: `--font-heading: '${fontPair.heading.replace(/\+/g, " ")}', sans-serif; --font-body: '${fontPair.body.replace(/\+/g, " ")}', sans-serif;`,
+      mood,
+    },
+    images: imageResults,
+    sounds: {},
+  });
 });
 
 router.post("/ai/process-sketch", requireAuth, async (req, res): Promise<void> => {

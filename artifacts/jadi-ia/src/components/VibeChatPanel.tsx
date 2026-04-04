@@ -736,10 +736,13 @@ export default function VibeChatPanel({
       });
     } catch (err: unknown) {
       if ((err as Error)?.name === "AbortError") return;
+      const errorMsg = (err instanceof Error && err.message && !err.message.startsWith("Stream failed"))
+        ? err.message
+        : "Erro ao conectar com a IA. Tente novamente.";
       setMessages((prev) => {
         const copy = [...prev];
         const last = copy[copy.length - 1];
-        if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: "Erro ao conectar com a IA. Tente novamente.", isStreaming: false };
+        if (last?.isStreaming) copy[copy.length - 1] = { ...last, content: errorMsg, isStreaming: false };
         return copy;
       });
     } finally {
